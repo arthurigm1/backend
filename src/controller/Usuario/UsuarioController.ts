@@ -1,21 +1,23 @@
+// UsuarioController.ts
+import { Request, Response } from "express";
 import { criarUsuarioSchema } from "../../schema/Usuario.schema";
 import { UsuarioService } from "../../service/Usuario/UsuarioService";
-import { Request, Response } from "express";
 
 const usuarioService = new UsuarioService();
 
 export class UsuarioController {
-  async criarUsuario(req: Request, res: Response) {
+  async create(req: Request, res: Response): Promise<Response> {
     try {
-      const data = criarUsuarioSchema.parse(req.body);
-      const usuarioCriado = await usuarioService.criarUsuario(data);
-      res.status(201).json(usuarioCriado);
+      const data = criarUsuarioSchema.safeParse(req.body);
+      if(!data.success){
+        return res.status(400).json({ error: "Dados inválidos" });
+      }
+      const usuarioCriado = await usuarioService.criarUsuario(data.data);
+      return res.status(201).json();
     } catch (error) {
-      return res
-        .status(500)
-        .json({
-          error: error instanceof Error ? error.message : String(error),
-        });
+      return res.status(500).json({
+      error,
+      });
     }
   }
 }
