@@ -10,6 +10,90 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
+
+model Usuario {
+  id         String     @id @default(uuid())
+  nome       String
+  email      String     @unique
+  senha      String
+  cpfCnpj    String?    @unique // <-- "?" torna o campo opcional
+  telefone   String?             // <-- opcional
+  tipo       TipoUsuario?        // <-- opcional
+  contratos  Contrato[]
+  pagamentos Pagamento[]
+  notificacoes Notificacao[]
+  criadoEm   DateTime  @default(now())
+}
+
+model Loja {
+  id           String      @id @default(uuid())
+  nome         String
+  numero       String
+  metragem     Float
+  localizacao  String
+  status       StatusLoja
+  contratos    Contrato[]
+  criadoEm     DateTime    @default(now())
+}
+
+model Contrato {
+  id              String     @id @default(uuid())
+  lojaId          String
+  inquilinoId     String
+  valorAluguel    Float
+  dataInicio      DateTime
+  dataFim         DateTime
+  reajusteAnual   Boolean
+  ativo           Boolean    @default(true)
+  loja            Loja       @relation(fields: [lojaId], references: [id])
+  inquilino       Usuario    @relation(fields: [inquilinoId], references: [id])
+  pagamentos      Pagamento[]
+  criadoEm        DateTime   @default(now())
+}
+
+model Pagamento {
+  id           String    @id @default(uuid())
+  contratoId   String
+  usuarioId    String
+  valor        Float
+  dataVenc     DateTime
+  dataPag      DateTime?
+  status       StatusPagamento
+  contrato     Contrato  @relation(fields: [contratoId], references: [id])
+  usuario      Usuario   @relation(fields: [usuarioId], references: [id])
+  criadoEm     DateTime  @default(now())
+}
+
+model Notificacao {
+  id          String    @id @default(uuid())
+  usuarioId   String
+  mensagem    String
+  enviadaEm   DateTime  @default(now())
+  usuario     Usuario   @relation(fields: [usuarioId], references: [id])
+}
+
+enum TipoUsuario {
+  LOJISTA
+  GERENTE
+  PROPRIETARIO
+  CONTADOR
+  SECRETARIA
+  ADMIN
+}
+
+enum StatusLoja {
+  VAGA
+  OCUPADA
+  INATIVA
+}
+
+enum StatusPagamento {
+  PENDENTE
+  PAGO
+  ATRASADO
+  CANCELADO
+}
+
