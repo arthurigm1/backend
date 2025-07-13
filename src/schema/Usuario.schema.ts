@@ -7,3 +7,10 @@ export const criarUsuarioSchema = z.object({
     .nonempty({ message: "Campo Obrigatorio!" })
     .min(6, { message: "Senha deve ter no mínimo 6 caracteres" }),
 });
+
+export const loginUsuarioSchema = z.object({
+  email: string().nonempty({ message: "Campo Obrigatorio!" }),
+  senha: string()
+    .nonempty({ message: "Campo Obrigatorio!" })
+    .min(6, { message: "Senha deve ter no mínimo 6 caracteres" }),
+});

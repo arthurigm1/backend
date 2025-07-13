@@ -5,6 +5,7 @@ import morgan from "morgan";
 import helmet from "helmet";
 
 import routes from "./rotas";
+import { errorHandler } from "./middleware/erromiddleware";
 const app = express();
 app.use(
   cors()
@@ -16,5 +17,7 @@ app.use(
 app.use(morgan("tiny"));
 app.use(helmet());
 app.use(express.json());
+
 app.use("/api", routes);
+app.use(errorHandler);
 export default app;

@@ -3,3 +3,7 @@ export interface ICriarUsuario {
   email: string;
   senha: string;
 }
+export interface ILoginUsuario {
+  email: string;
+  senha: string;
+}
