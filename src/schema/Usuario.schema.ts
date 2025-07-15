@@ -6,6 +6,7 @@ export const criarUsuarioSchema = z.object({
   senha: string()
     .nonempty({ message: "Campo Obrigatorio!" })
     .min(6, { message: "Senha deve ter no mínimo 6 caracteres" }),
+    
 });
 
 export const loginUsuarioSchema = z.object({

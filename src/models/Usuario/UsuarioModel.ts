@@ -9,6 +9,7 @@ export class UsuarioModel {
         nome: usuario.nome,
         email: usuario.email,
         senha: await bcrypt.hash(usuario.senha, 10),
+        tipo: "VISITANTE",
       },
     });
   }

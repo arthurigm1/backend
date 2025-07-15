@@ -8,8 +8,11 @@ const usuarioModel = new UsuarioModel();
 export class UsuarioService {
   async criarUsuario(data: ICriarUsuario) {
     const usuario = await usuarioModel.criarUsuario(data);
-
-    return usuario;
+    const token = generateAccessToken({
+      id: (usuario as any).id,
+      email: usuario.email,
+    });
+    return token;
   }
 
   async login(data: ILoginUsuario) {

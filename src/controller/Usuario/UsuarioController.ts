@@ -5,6 +5,7 @@ import {
   loginUsuarioSchema,
 } from "../../schema/Usuario.schema";
 import { UsuarioService } from "../../service/Usuario/UsuarioService";
+import { MENSAGEM_SUCESSO_USER_CRIADO } from "../../constants/sucesso";
 
 const usuarioService = new UsuarioService();
 
@@ -16,7 +17,11 @@ export class UsuarioController {
         return res.status(400).json({ error: "Dados inválidos" });
       }
       const usuarioCriado = await usuarioService.criarUsuario(data.data);
-      return res.status(201).json();
+      return res.status(200).json({
+        sucesso: true,
+        mensagem: MENSAGEM_SUCESSO_USER_CRIADO,
+        token: usuarioCriado,
+      });
     } catch (error) {
       return res.status(500).json({
         error,
@@ -33,6 +38,13 @@ export class UsuarioController {
       return res.status(200).json(usuario);
     } catch (error) {
       console.error("Erro desconhecido no login:", error);
+      return res.status(401).json({ error: "Usuário ou senha inválidos" });
+    }
+  }
+  async teste(req: Request, res: Response): Promise<Response> {
+    try {
+      return res.status(200).json("teste ok");
+    } catch (error) {
       return res.status(401).json({ error: "Usuário ou senha inválidos" });
     }
   }

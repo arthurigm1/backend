@@ -82,6 +82,7 @@ enum TipoUsuario {
   CONTADOR
   SECRETARIA
   ADMIN
+  VISITANTE
 }
 
 enum StatusLoja {
