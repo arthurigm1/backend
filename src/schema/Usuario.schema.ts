@@ -1,17 +1,44 @@
-import { number, string, z } from "zod";
+import { string, z } from "zod";
+import { criarEmpresaSchema } from "./Empresa.schema";
+
+const tipoUsuarioEnum = z.enum(['ADMIN_EMPRESA', 'FUNCIONARIO', 'INQUILINO']);
+
+export const criarUsuarioComEmpresaSchema = z.object({
+  nome: string().nonempty({ message: "Nome é obrigatório!" }),
+  email: string().email({ message: "Email inválido" }),
+  senha: string()
+    .nonempty({ message: "Senha é obrigatória!" })
+    .min(6, { message: "Senha deve ter no mínimo 6 caracteres" }),
+  cpf: string().optional(),
+  telefone: string().optional(),
+  empresa: criarEmpresaSchema,
+});
 
 export const criarUsuarioSchema = z.object({
-  nome: string().nonempty({ message: "Campo Obrigatorio!" }),
-  email: string().nonempty({ message: "Campo Obrigatorio!" }),
+  nome: string().nonempty({ message: "Nome é obrigatório!" }),
+  email: string().email({ message: "Email inválido" }),
   senha: string()
-    .nonempty({ message: "Campo Obrigatorio!" })
+    .nonempty({ message: "Senha é obrigatória!" })
     .min(6, { message: "Senha deve ter no mínimo 6 caracteres" }),
-    
+  cpf: string().optional(),
+  telefone: string().optional(),
+  empresaId: string().nonempty({ message: "ID da empresa é obrigatório!" }),
+  tipo: tipoUsuarioEnum,
+});
+
+export const criarInquilinoSchema = z.object({
+  nome: string().nonempty({ message: "Nome é obrigatório!" }),
+  email: string().email({ message: "Email inválido" }),
+  senha: string()
+    .nonempty({ message: "Senha é obrigatória!" })
+    .min(6, { message: "Senha deve ter no mínimo 6 caracteres" }),
+  cpf: string().optional(),
+  telefone: string().optional(),
 });
 
 export const loginUsuarioSchema = z.object({
-  email: string().nonempty({ message: "Campo Obrigatorio!" }),
+  email: string().email({ message: "Email inválido" }),
   senha: string()
-    .nonempty({ message: "Campo Obrigatorio!" })
+    .nonempty({ message: "Senha é obrigatória!" })
     .min(6, { message: "Senha deve ter no mínimo 6 caracteres" }),
 });

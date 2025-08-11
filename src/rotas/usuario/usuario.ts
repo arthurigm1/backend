@@ -1,12 +1,19 @@
 import { Router } from "express";
 import { UsuarioController } from "../../controller/Usuario/UsuarioController";
-import { verifyToken } from "../../utils/jwt";
 import { authenticateJWT } from "../../middleware/auth.middleware";
 
 const router = Router();
-const usuariocontroller = new UsuarioController();
+const usuarioController = new UsuarioController();
 
-router.post("/", usuariocontroller.create);
-router.post("/login", usuariocontroller.login);
-router.get("/a", authenticateJWT, usuariocontroller.teste);
+// Rotas públicas
+router.post("/registro-com-empresa", usuarioController.createWithCompany);
+router.post("/login", usuarioController.login);
+
+// Rotas protegidas
+router.post("/criar-usuario", authenticateJWT, usuarioController.create);
+router.post("/criar-inquilino", authenticateJWT, usuarioController.createTenant);
+router.get("/empresa/usuarios", authenticateJWT, usuarioController.listarUsuariosDaEmpresa);
+router.get("/id/:id", authenticateJWT, usuarioController.buscarPorId);
+router.get("/teste", authenticateJWT, usuarioController.teste);
+
 export default router;

@@ -14,18 +14,28 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Empresa {
+  id        String   @id @default(cuid())
+  nome      String
+  cnpj      String   @unique
+  criadoEm  DateTime @default(now())
+  usuarios  Usuario[]
+}
+
 model Usuario {
-  id         String     @id @default(uuid())
-  nome       String
-  email      String     @unique
-  senha      String
-  cpfCnpj    String?    @unique // <-- "?" torna o campo opcional
-  telefone   String?             // <-- opcional
-  tipo       TipoUsuario?        // <-- opcional
-  contratos  Contrato[]
-  pagamentos Pagamento[]
+  id           String        @id @default(uuid())
+  nome         String
+  email        String        @unique
+  senha        String
+  cpf          String?       @unique
+  telefone     String?
+  tipo         TipoUsuario
+  empresaId    String
+  empresa      Empresa       @relation(fields: [empresaId], references: [id])
+  contratos    Contrato[]
+  pagamentos   Pagamento[]
   notificacoes Notificacao[]
-  criadoEm   DateTime  @default(now())
+  criadoEm     DateTime      @default(now())
 }
 
 model Loja {
@@ -76,13 +86,9 @@ model Notificacao {
 }
 
 enum TipoUsuario {
-  LOJISTA
-  GERENTE
-  PROPRIETARIO
-  CONTADOR
-  SECRETARIA
-  ADMIN
-  VISITANTE
+  ADMIN_EMPRESA    // Usuário principal da empresa que pode criar outros usuários
+  FUNCIONARIO      // Funcionário da empresa
+  INQUILINO        // Inquilino (pode ser criado por usuários da empresa)
 }
 
 enum StatusLoja {

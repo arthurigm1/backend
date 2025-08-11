@@ -19,14 +19,11 @@ export const authenticateJWT = (
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
     return next(new ApiError(401, "Token de autenticação não fornecido"));
   }
-
   const token = authHeader.split(" ")[1];
-
   jwt.verify(token, JWT_SECRET, (err, payload) => {
     if (err || !payload) {
       return next(new ApiError(403, "Token inválido ou expirado"));
     }
-
     req.user = payload; // precisa declarar req.user no d.ts
     next();
   });
