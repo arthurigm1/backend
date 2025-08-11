@@ -2,6 +2,7 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import { ApiError } from "../utils/apiError";
+import { UserPayload } from "../utils/express";
 
 // TypeScript: garante que a variável existe
 const JWT_SECRET = process.env.SEGREDO_JWT;
@@ -24,7 +25,7 @@ export const authenticateJWT = (
     if (err || !payload) {
       return next(new ApiError(403, "Token inválido ou expirado"));
     }
-    req.user = payload; // precisa declarar req.user no d.ts
+    req.user = payload as UserPayload; // Type assertion to ensure payload matches UserPayload type
     next();
   });
 };
