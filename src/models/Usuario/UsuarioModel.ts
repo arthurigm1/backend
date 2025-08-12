@@ -1,5 +1,7 @@
 import { ICriarUsuario, ICriarInquilino, ILoginUsuario } from "../../interface/Usuario/Usuario";
-import prismaClient from "../../prisma/PrismaClient";
+import { PrismaClient } from "../../generated/prisma";
+
+const prismaClient = new PrismaClient();
 import bcrypt from "bcrypt";
 
 export class UsuarioModel {
@@ -96,5 +98,14 @@ export class UsuarioModel {
       },
     });
     return !!usuario;
+  }
+
+  async buscarContratoAtivoInquilino(inquilinoId: string) {
+    return await prismaClient.contrato.findFirst({
+      where: {
+        inquilinoId: inquilinoId,
+        ativo: true,
+      },
+    });
   }
 }

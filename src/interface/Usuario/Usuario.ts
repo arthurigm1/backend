@@ -1,3 +1,5 @@
+import { TipoUsuario } from '../../generated/prisma';
+
 export interface ICriarUsuario {
   nome: string;
   email: string;
@@ -5,7 +7,7 @@ export interface ICriarUsuario {
   cpf?: string;
   telefone?: string;
   empresaId: string;
-  tipo: 'ADMIN_EMPRESA' | 'FUNCIONARIO' | 'INQUILINO';
+  tipo: TipoUsuario;
 }
 
 export interface ICriarUsuarioComEmpresa {
@@ -39,7 +41,7 @@ export interface IUsuario {
   email: string;
   cpf?: string;
   telefone?: string;
-  tipo: 'ADMIN_EMPRESA' | 'FUNCIONARIO' | 'INQUILINO';
+  tipo: TipoUsuario;
   empresaId: string;
   criadoEm: Date;
 }

@@ -1,5 +1,7 @@
-import { ICriarEmpresa } from "../../interface/Empresa/Empresa";
-import prismaClient from "../../prisma/PrismaClient";
+import { ICriarEmpresa, IEmpresa } from "../../interface/Empresa/Empresa";
+import { PrismaClient } from "../../generated/prisma";
+
+const prismaClient = new PrismaClient();
 
 export class EmpresaModel {
   async criarEmpresa(empresa: ICriarEmpresa) {

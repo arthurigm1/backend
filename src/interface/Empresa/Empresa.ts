@@ -9,3 +9,8 @@ export interface IEmpresa {
   cnpj: string;
   criadoEm: Date;
 }
+
+export interface IAtualizarEmpresa {
+  nome?: string;
+  cnpj?: string;
+}
