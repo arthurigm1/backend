@@ -17,12 +17,11 @@ export class UsuarioService {
     }
     
     // Criar o usuário para a empresa especificada
-    const usuarioData: ICriarUsuario = {
+    const usuarioData: ICriarUsuarioComEmpresa = {
       nome: data.nome,
       email: data.email,
       senha: data.senha,
       empresaId: data.empresaId,
-      tipo: data.tipo
     };
     
     const usuario = await usuarioModel.criarUsuario(usuarioData);
@@ -30,7 +29,7 @@ export class UsuarioService {
       id: usuario.id,
       email: usuario.email,
       empresaId: usuario.empresaId,
-      tipo: usuario.tipo,
+      tipo: "VISITANTE"
     });
     
     return { usuario, empresa, token };

@@ -1,19 +1,18 @@
-import { ICriarUsuario, ICriarInquilino, ILoginUsuario } from "../../interface/Usuario/Usuario";
+import { ICriarUsuario, ICriarInquilino, ILoginUsuario, ICriarUsuarioComEmpresa } from "../../interface/Usuario/Usuario";
 import { PrismaClient } from "../../generated/prisma";
 
 const prismaClient = new PrismaClient();
 import bcrypt from "bcrypt";
 
 export class UsuarioModel {
-  async criarUsuario(usuario: ICriarUsuario) {
+  async criarUsuario(usuario: ICriarUsuarioComEmpresa) {
     return await prismaClient.usuario.create({
       data: {
         nome: usuario.nome,
         email: usuario.email,
         senha: await bcrypt.hash(usuario.senha, 10),
         cpf: usuario.cpf,
-        telefone: usuario.telefone,
-        tipo: usuario.tipo,
+        tipo: "VISITANTE",
         empresaId: usuario.empresaId,
       },
     });

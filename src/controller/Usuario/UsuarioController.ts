@@ -25,9 +25,8 @@ export class UsuarioController {
       const resultado = await usuarioService.criarUsuarioComEmpresa(data.data);
       return res.status(201).json({
         sucesso: true,
-        mensagem: "Usuário e empresa criados com sucesso",
-        usuario: resultado.usuario,
-        empresa: resultado.empresa,
+        mensagem: "Usuário criado com sucesso",
+        usuario: resultado.usuario.email,
         token: resultado.token,
       });
     } catch (error: any) {

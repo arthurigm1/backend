@@ -10,7 +10,6 @@ export const criarUsuarioComEmpresaSchema = z.object({
     .nonempty({ message: "Senha é obrigatória!" })
     .min(6, { message: "Senha deve ter no mínimo 6 caracteres" }),
   empresaId: string().nonempty({ message: "ID da empresa é obrigatório!" }),
-  tipo: tipoUsuarioEnum,
 });
 
 export const criarUsuarioSchema = z.object({

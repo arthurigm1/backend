@@ -15,9 +15,7 @@ export interface ICriarUsuarioComEmpresa {
   email: string;
   senha: string;
   cpf?: string;
-  telefone?: string;
   empresaId: string;
-  tipo: TipoUsuario;
 }
 
 export interface ICriarInquilino {
