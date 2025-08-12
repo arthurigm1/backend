@@ -6,7 +6,7 @@ const router = Router();
 const usuarioController = new UsuarioController();
 
 // Rotas públicas
-router.post("/registro-com-empresa", usuarioController.createWithCompany);
+router.post("/registro", usuarioController.createWithCompany);
 router.post("/login", usuarioController.login);
 
 // Rotas protegidas

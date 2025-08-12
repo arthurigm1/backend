@@ -10,18 +10,19 @@ const empresaService = new EmpresaService();
 
 export class UsuarioService {
   async criarUsuarioComEmpresa(data: ICriarUsuarioComEmpresa) {
-    // Primeiro cria a empresa
-    const empresa = await empresaService.criarEmpresa(data.empresa);
+    // Verificar se a empresa existe
+    const empresa = await empresaService.buscarEmpresaPorId(data.empresaId);
+    if (!empresa) {
+      throw new ApiError(404, "Empresa não encontrada");
+    }
     
-    // Depois cria o usuário admin da empresa
+    // Criar o usuário para a empresa especificada
     const usuarioData: ICriarUsuario = {
       nome: data.nome,
       email: data.email,
       senha: data.senha,
-      cpf: data.cpf,
-      telefone: data.telefone,
-      empresaId: empresa.id,
-      tipo: 'ADMIN_EMPRESA'
+      empresaId: data.empresaId,
+      tipo: data.tipo
     };
     
     const usuario = await usuarioModel.criarUsuario(usuarioData);

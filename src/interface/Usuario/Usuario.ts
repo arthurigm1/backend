@@ -16,10 +16,8 @@ export interface ICriarUsuarioComEmpresa {
   senha: string;
   cpf?: string;
   telefone?: string;
-  empresa: {
-    nome: string;
-    cnpj: string;
-  };
+  empresaId: string;
+  tipo: TipoUsuario;
 }
 
 export interface ICriarInquilino {

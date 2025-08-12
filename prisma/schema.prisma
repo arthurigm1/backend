@@ -94,6 +94,7 @@ enum TipoUsuario {
   ADMIN_EMPRESA    // Usuário principal da empresa que pode criar outros usuários
   FUNCIONARIO      // Funcionário da empresa
   INQUILINO        // Inquilino (pode ser criado por usuários da empresa)
+  VISITANTE
 }
 
 enum StatusLoja {

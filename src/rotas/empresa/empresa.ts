@@ -11,6 +11,6 @@ router.post("/criar", empresaController.create);
 // Rotas protegidas
 router.get("/cnpj/:cnpj", authenticateJWT, empresaController.buscarPorCnpj);
 router.get("/id/:id", authenticateJWT, empresaController.buscarPorId);
-router.get("/listar", authenticateJWT, empresaController.listar);
+router.get("/listar", empresaController.listar);
 
 export default router;
