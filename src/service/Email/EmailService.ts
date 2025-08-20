@@ -1,52 +1,30 @@
 import nodemailer from 'nodemailer';
-import { google } from 'googleapis';
 import { ApiError } from '../../utils/apiError';
 
-const OAuth2 = google.auth.OAuth2;
-
 export class EmailService {
-  private oauth2Client: any;
   private transporter!: nodemailer.Transporter;
 
   constructor() {
-    this.oauth2Client = new OAuth2(
-      process.env.GMAIL_CLIENT_ID,
-      process.env.GMAIL_CLIENT_SECRET,
-      'https://developers.google.com/oauthplayground'
-    );
-
-    this.oauth2Client.setCredentials({
-      refresh_token: process.env.GMAIL_REFRESH_TOKEN
-    });
-
-    this.initializeTransporter();
+    this.setupTransporter();
   }
 
-  private async initializeTransporter() {
-    try {
-      const accessToken = await this.oauth2Client.getAccessToken();
-
-      this.transporter = nodemailer.createTransport({
-        service: 'gmail',
-        auth: {
-          type: 'OAuth2',
-          user: process.env.GMAIL_USER,
-          clientId: process.env.GMAIL_CLIENT_ID,
-          clientSecret: process.env.GMAIL_CLIENT_SECRET,
-          refreshToken: process.env.GMAIL_REFRESH_TOKEN,
-          accessToken: accessToken.token,
-        },
-      });
-    } catch (error) {
-      console.error('Erro ao inicializar transporter de email:', error);
-      throw new ApiError(500, 'Erro na configuração do serviço de email');
-    }
+  private setupTransporter() {
+    this.transporter = nodemailer.createTransport({
+      host: 'smtp.gmail.com',
+      port: 587,
+      secure: false, // true para 465, false para outras portas
+      auth: {
+        user: process.env.MAIL_USER,
+        pass: process.env.MAIL_PASSWORD
+      },
+      tls: {
+        rejectUnauthorized: false
+      }
+    });
   }
 
   async enviarEmailRedefinicaoSenha(email: string, nome: string, token: string): Promise<void> {
     try {
-      // Reinicializar transporter para garantir token válido
-      await this.initializeTransporter();
 
       const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/redefinir-senha?token=${token}`;
 
@@ -94,7 +72,6 @@ export class EmailService {
 
   async enviarEmailConfirmacaoRedefinicao(email: string, nome: string): Promise<void> {
     try {
-      await this.initializeTransporter();
 
       const mailOptions = {
         from: process.env.GMAIL_USER,
@@ -122,7 +99,7 @@ export class EmailService {
       console.log(`Email de confirmação enviado para: ${email}`);
     } catch (error) {
       console.error('Erro ao enviar email de confirmação:', error);
-      // Não lançar erro aqui pois a senha já foi alterada com sucesso
+      throw new ApiError(500, 'Erro ao enviar email de confirmação');
     }
   }
 }
