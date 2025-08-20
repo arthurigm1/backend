@@ -4,6 +4,8 @@ import {
   criarUsuarioSchema,
   criarInquilinoSchema,
   loginUsuarioSchema,
+  solicitarRedefinicaoSenhaSchema,
+  redefinirSenhaSchema,
 } from "../../schema/Usuario.schema";
 import { UsuarioService } from "../../service/Usuario/UsuarioService";
 import { MENSAGEM_SUCESSO_USER_CRIADO } from "../../constants/sucesso";
@@ -170,6 +172,44 @@ export class UsuarioController {
       });
     } catch (error: any) {
       return res.status(500).json({ error: "Erro interno do servidor" });
+    }
+  }
+
+  async solicitarRedefinicaoSenha(req: Request, res: Response): Promise<Response> {
+    try {
+      const dadosValidados = solicitarRedefinicaoSenhaSchema.safeParse(req.body);
+      if (!dadosValidados.success) {
+        return res.status(400).json({ 
+          error: "Dados inválidos",
+          details: dadosValidados.error.errors 
+        });
+      }
+      
+      const resultado = await usuarioService.solicitarRedefinicaoSenha(dadosValidados.data);
+      return res.status(200).json(resultado);
+    } catch (error: any) {
+      return res.status(error.statusCode || 500).json({ 
+        error: error.message || "Erro interno do servidor" 
+      });
+    }
+  }
+
+  async redefinirSenha(req: Request, res: Response): Promise<Response> {
+    try {
+      const dadosValidados = redefinirSenhaSchema.safeParse(req.body);
+      if (!dadosValidados.success) {
+        return res.status(400).json({ 
+          error: "Dados inválidos",
+          details: dadosValidados.error.errors 
+        });
+      }
+      
+      const resultado = await usuarioService.redefinirSenha(dadosValidados.data);
+      return res.status(200).json(resultado);
+    } catch (error: any) {
+      return res.status(error.statusCode || 400).json({ 
+        error: error.message || "Erro ao redefinir senha" 
+      });
     }
   }
 }

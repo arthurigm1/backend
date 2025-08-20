@@ -8,6 +8,8 @@ const usuarioController = new UsuarioController();
 // Rotas públicas
 router.post("/registro", usuarioController.createWithCompany);
 router.post("/login", usuarioController.login);
+router.post("/solicitar-redefinicao-senha", usuarioController.solicitarRedefinicaoSenha);
+router.post("/redefinir-senha", usuarioController.redefinirSenha);
 
 // Rotas protegidas
 router.post("/criar-usuario", authenticateJWT, usuarioController.create);

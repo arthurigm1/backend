@@ -41,3 +41,12 @@ export interface IUsuario {
   empresaId: string;
   criadoEm: Date;
 }
+
+export interface ISolicitarRedefinicaoSenha {
+  email: string;
+}
+
+export interface IRedefinirSenha {
+  token: string;
+  novaSenha: string;
+}

@@ -1,4 +1,4 @@
-import { ICriarUsuario, ICriarInquilino, ILoginUsuario, ICriarUsuarioComEmpresa } from "../../interface/Usuario/Usuario";
+import { ICriarUsuario, ICriarInquilino, ILoginUsuario, ICriarUsuarioComEmpresa, ISolicitarRedefinicaoSenha, IRedefinirSenha } from "../../interface/Usuario/Usuario";
 import { PrismaClient } from "../../generated/prisma";
 
 const prismaClient = new PrismaClient();
@@ -104,6 +104,64 @@ export class UsuarioModel {
       where: {
         inquilinoId: inquilinoId,
         ativo: true,
+      },
+    });
+  }
+
+  async buscarPorEmail(email: string) {
+    return await prismaClient.usuario.findUnique({
+      where: { email },
+      select: {
+        id: true,
+        nome: true,
+        email: true,
+        empresaId: true,
+      },
+    });
+  }
+
+  async salvarTokenRedefinicaoSenha(usuarioId: string, token: string, expires: Date) {
+    return await prismaClient.usuario.update({
+      where: { id: usuarioId },
+      data: {
+        resetPasswordToken: token,
+        resetPasswordExpires: expires,
+      },
+    });
+  }
+
+  async buscarPorTokenRedefinicao(token: string) {
+    return await prismaClient.usuario.findFirst({
+      where: {
+        resetPasswordToken: token,
+        resetPasswordExpires: {
+          gt: new Date(),
+        },
+      },
+      select: {
+        id: true,
+        nome: true,
+        email: true,
+        resetPasswordToken: true,
+        resetPasswordExpires: true,
+      },
+    });
+  }
+
+  async atualizarSenha(usuarioId: string, novaSenha: string) {
+    const senhaHash = await bcrypt.hash(novaSenha, 10);
+    
+    return await prismaClient.usuario.update({
+      where: { id: usuarioId },
+      data: {
+        senha: senhaHash,
+        resetPasswordToken: null,
+        resetPasswordExpires: null,
+      },
+      select: {
+        id: true,
+        nome: true,
+        email: true,
       },
     });
   }

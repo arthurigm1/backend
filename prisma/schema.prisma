@@ -24,19 +24,21 @@ model Empresa {
 }
 
 model Usuario {
-  id           String        @id @default(uuid())
-  nome         String
-  email        String        @unique
-  senha        String
-  cpf          String?       @unique
-  telefone     String?
-  tipo         TipoUsuario
-  empresaId    String
-  empresa      Empresa       @relation(fields: [empresaId], references: [id])
-  contratos    Contrato[]
-  pagamentos   Pagamento[]
-  notificacoes Notificacao[]
-  criadoEm     DateTime      @default(now())
+  id                     String        @id @default(uuid())
+  nome                   String
+  email                  String        @unique
+  senha                  String
+  cpf                    String?       @unique
+  telefone               String?
+  tipo                   TipoUsuario
+  empresaId              String
+  resetPasswordToken     String?
+  resetPasswordExpires   DateTime?
+  empresa                Empresa       @relation(fields: [empresaId], references: [id])
+  contratos              Contrato[]
+  pagamentos             Pagamento[]
+  notificacoes           Notificacao[]
+  criadoEm               DateTime      @default(now())
 }
 
 model Loja {

@@ -1,9 +1,11 @@
-import { ICriarUsuario, ICriarUsuarioComEmpresa, ICriarInquilino, ILoginUsuario } from "../../interface/Usuario/Usuario";
+import { ICriarUsuario, ICriarUsuarioComEmpresa, ICriarInquilino, ILoginUsuario, ISolicitarRedefinicaoSenha, IRedefinirSenha } from "../../interface/Usuario/Usuario";
 import { UsuarioModel } from "../../models/Usuario/UsuarioModel";
 import { EmpresaService } from "../Empresa/EmpresaService";
 import bcrypt from "bcrypt";
 import { generateAccessToken } from "../../utils/jwt";
 import { ApiError } from "../../utils/apiError";
+import { emailService } from "../Email/EmailService";
+import crypto from "crypto";
 
 const usuarioModel = new UsuarioModel();
 const empresaService = new EmpresaService();
@@ -135,5 +137,56 @@ export class UsuarioService {
     }
 
     return usuario;
+  }
+
+  async solicitarRedefinicaoSenha(data: ISolicitarRedefinicaoSenha) {
+    const usuario = await usuarioModel.buscarPorEmail(data.email);
+    
+    if (!usuario) {
+      // Por segurança, não revelamos se o email existe ou não
+      return { sucesso: true, mensagem: "Se o email existir, você receberá instruções para redefinir sua senha." };
+    }
+
+    // Gerar token único
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    
+    // Token expira em 1 hora
+    const expires = new Date();
+    expires.setHours(expires.getHours() + 1);
+
+    // Salvar token no banco
+    await usuarioModel.salvarTokenRedefinicaoSenha(usuario.id, resetToken, expires);
+
+    // Enviar email
+    await emailService.enviarEmailRedefinicaoSenha(usuario.email, usuario.nome, resetToken);
+
+    return { 
+      sucesso: true, 
+      mensagem: "Se o email existir, você receberá instruções para redefinir sua senha." 
+    };
+  }
+
+  async redefinirSenha(data: IRedefinirSenha) {
+    const usuario = await usuarioModel.buscarPorTokenRedefinicao(data.token);
+    
+    if (!usuario) {
+      throw new ApiError(400, "Token inválido ou expirado");
+    }
+
+    // Validar força da senha
+    if (data.novaSenha.length < 6) {
+      throw new ApiError(400, "A senha deve ter pelo menos 6 caracteres");
+    }
+
+    // Atualizar senha e limpar token
+    const usuarioAtualizado = await usuarioModel.atualizarSenha(usuario.id, data.novaSenha);
+
+    // Enviar email de confirmação
+    await emailService.enviarEmailConfirmacaoRedefinicao(usuarioAtualizado.email, usuarioAtualizado.nome);
+
+    return { 
+      sucesso: true, 
+      mensagem: "Senha redefinida com sucesso" 
+    };
   }
 }
