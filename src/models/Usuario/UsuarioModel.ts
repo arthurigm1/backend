@@ -45,9 +45,7 @@ async login(email: string) {
       empresa: { select: { id: true, nome: true, cnpj: true } },
     },
   });
-  if (!user || user.tipo === TipoUsuario.INQUILINO ) {
-    throw new Error('Usuário do tipo inquilino não pode fazer login.');
-  }
+  
 
   return user;
 }

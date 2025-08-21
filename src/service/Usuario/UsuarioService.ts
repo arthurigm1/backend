@@ -6,6 +6,7 @@ import { generateAccessToken } from "../../utils/jwt";
 import { ApiError } from "../../utils/apiError";
 import { emailService } from "../Email/EmailService";
 import crypto from "crypto";
+import { TipoUsuario } from "../../generated/prisma";
 
 const usuarioModel = new UsuarioModel();
 const empresaService = new EmpresaService();
@@ -98,6 +99,10 @@ export class UsuarioService {
     const senhaValida = await bcrypt.compare(data.senha, usuario.senha);
     if (!senhaValida) {
       throw new ApiError(401, "Usuário ou senha inválidos");
+    }
+
+    if (usuario.tipo !== TipoUsuario.INQUILINO ) {
+      throw new ApiError(401, "Usuário tipo inquilino não acessa esta rota!!");
     }
     
     const token = generateAccessToken({
