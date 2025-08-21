@@ -111,6 +111,34 @@ export class UsuarioService {
     return { usuario: usuarioSemSenha, token };
   }
 
+  async loginInquilino(data: ILoginUsuario) {
+    const usuario = await usuarioModel.login(data.email);
+
+    if (!usuario) {
+      throw new ApiError(401, "Usuário ou senha inválidos");
+    }
+    
+    // Verificar se o usuário é do tipo INQUILINO
+    if (usuario.tipo !== 'INQUILINO') {
+      throw new ApiError(403, "Acesso negado. Apenas inquilinos podem fazer login por esta rota");
+    }
+    
+    const senhaValida = await bcrypt.compare(data.senha, usuario.senha);
+    if (!senhaValida) {
+      throw new ApiError(401, "Usuário ou senha inválidos");
+    }
+    
+    const token = generateAccessToken({
+      id: usuario.id,
+      email: usuario.email,
+      empresaId: usuario.empresaId,
+      tipo: usuario.tipo,
+    });
+    
+    const { senha, ...usuarioSemSenha } = usuario;
+    return { usuario: usuarioSemSenha, token };
+  }
+
   async listarUsuariosDaEmpresa(usuarioLogadoId: string) {
     const usuarioLogado = await usuarioModel.buscarPorId(usuarioLogadoId);
     if (!usuarioLogado) {

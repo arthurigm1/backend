@@ -30,8 +30,6 @@ export const criarInquilinoSchema = z.object({
   senha: string()
     .nonempty({ message: "Senha é obrigatória!" })
     .min(6, { message: "Senha deve ter no mínimo 6 caracteres" }),
-  cpf: string().optional(),
-  telefone: string().optional(),
 });
 
 export const loginUsuarioSchema = z.object({

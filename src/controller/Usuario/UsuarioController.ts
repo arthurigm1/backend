@@ -38,34 +38,6 @@ export class UsuarioController {
     }
   }
 
-  async create(req: Request, res: Response): Promise<Response> {
-    try {
-      const data = criarUsuarioSchema.safeParse(req.body);
-      if (!data.success) {
-        return res.status(400).json({ 
-          error: "Dados inválidos",
-          details: data.error.errors 
-        });
-      }
-      
-      const usuarioLogadoId = req.user?.id;
-      if (!usuarioLogadoId) {
-        return res.status(401).json({ error: "Usuário não autenticado" });
-      }
-      
-      const resultado = await usuarioService.criarUsuario(data.data, usuarioLogadoId);
-      return res.status(201).json({
-        sucesso: true,
-        mensagem: MENSAGEM_SUCESSO_USER_CRIADO,
-        usuario: resultado.usuario,
-        token: resultado.token,
-      });
-    } catch (error: any) {
-      return res.status(error.statusCode || 500).json({
-        error: error.message || "Erro interno do servidor",
-      });
-    }
-  }
 
   async createTenant(req: Request, res: Response): Promise<Response> {
     try {
@@ -107,6 +79,29 @@ export class UsuarioController {
       }
       
       const resultado = await usuarioService.login(loginusuario.data);
+      return res.status(200).json({
+        sucesso: true,
+        usuario: resultado.usuario,
+        token: resultado.token,
+      });
+    } catch (error: any) {
+      return res.status(error.statusCode || 401).json({ 
+        error: error.message || "Usuário ou senha inválidos" 
+      });
+    }
+  }
+
+  async loginInquilino(req: Request, res: Response): Promise<Response> {
+    try {
+      const loginusuario = loginUsuarioSchema.safeParse(req.body);
+      if (!loginusuario.success) {
+        return res.status(400).json({ 
+          error: "Dados inválidos",
+          details: loginusuario.error.errors 
+        });
+      }
+      
+      const resultado = await usuarioService.loginInquilino(loginusuario.data);
       return res.status(200).json({
         sucesso: true,
         usuario: resultado.usuario,
@@ -163,17 +158,6 @@ export class UsuarioController {
     }
   }
 
-  async teste(req: Request, res: Response): Promise<Response> {
-    try {
-      return res.status(200).json({
-        sucesso: true,
-        mensagem: "Teste OK",
-        usuario: req.user,
-      });
-    } catch (error: any) {
-      return res.status(500).json({ error: "Erro interno do servidor" });
-    }
-  }
 
   async solicitarRedefinicaoSenha(req: Request, res: Response): Promise<Response> {
     try {

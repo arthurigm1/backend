@@ -1,5 +1,5 @@
 import { ICriarUsuario, ICriarInquilino, ILoginUsuario, ICriarUsuarioComEmpresa, ISolicitarRedefinicaoSenha, IRedefinirSenha } from "../../interface/Usuario/Usuario";
-import { PrismaClient } from "../../generated/prisma";
+import { PrismaClient, TipoUsuario } from "../../generated/prisma";
 
 const prismaClient = new PrismaClient();
 import bcrypt from "bcrypt";
@@ -32,26 +32,26 @@ export class UsuarioModel {
     });
   }
 
-  async login(email: string) {
-    return await prismaClient.usuario.findUnique({
-      where: { email },
-      select: {
-        id: true,
-        nome: true,
-        email: true,
-        senha: true,
-        tipo: true,
-        empresaId: true,
-        empresa: {
-          select: {
-            id: true,
-            nome: true,
-            cnpj: true,
-          },
-        },
-      },
-    });
+async login(email: string) {
+  const user = await prismaClient.usuario.findUnique({
+    where: { email },
+    select: {
+      id: true,
+      nome: true,
+      email: true,
+      senha: true,
+      tipo: true,
+      empresaId: true,
+      empresa: { select: { id: true, nome: true, cnpj: true } },
+    },
+  });
+  if (!user || user.tipo === TipoUsuario.INQUILINO ) {
+    throw new Error('Usuário do tipo inquilino não pode fazer login.');
   }
+
+  return user;
+}
+
 
   async buscarPorId(id: string) {
     return await prismaClient.usuario.findUnique({
