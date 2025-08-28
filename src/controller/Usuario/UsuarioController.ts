@@ -121,10 +121,30 @@ export class UsuarioController {
         return res.status(401).json({ error: "Usuário não autenticado" });
       }
       
-      const usuarios = await usuarioService.listarUsuariosDaEmpresa(usuarioLogadoId);
+      // Parâmetros de paginação
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 10;
+      
+      // Validar parâmetros
+      if (page < 1) {
+        return res.status(400).json({ error: "Página deve ser maior que 0" });
+      }
+      if (limit < 1 || limit > 100) {
+        return res.status(400).json({ error: "Limite deve estar entre 1 e 100" });
+      }
+      
+      const resultado = await usuarioService.listarUsuariosDaEmpresa(usuarioLogadoId, page, limit);
       return res.status(200).json({
         sucesso: true,
-        usuarios: usuarios,
+        usuarios: resultado.usuarios,
+        paginacao: {
+          paginaAtual: page,
+          totalPaginas: resultado.totalPaginas,
+          totalUsuarios: resultado.totalUsuarios,
+          limite: limit,
+          temProximaPagina: page < resultado.totalPaginas,
+          temPaginaAnterior: page > 1
+        }
       });
     } catch (error: any) {
       return res.status(error.statusCode || 500).json({

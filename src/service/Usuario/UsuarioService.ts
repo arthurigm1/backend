@@ -144,13 +144,14 @@ export class UsuarioService {
     return { usuario: usuarioSemSenha, token };
   }
 
-  async listarUsuariosDaEmpresa(usuarioLogadoId: string) {
+  async listarUsuariosDaEmpresa(usuarioLogadoId: string, page: number = 1, limit: number = 10) {
     const usuarioLogado = await usuarioModel.buscarPorId(usuarioLogadoId);
     if (!usuarioLogado) {
       throw new ApiError(404, "Usuário não encontrado");
     }
 
-    return await usuarioModel.listarUsuariosDaEmpresa(usuarioLogado.empresaId);
+    const resultado = await usuarioModel.listarUsuariosDaEmpresa(usuarioLogado.empresaId, page, limit);
+    return resultado;
   }
 
   async buscarUsuarioPorId(id: string, usuarioLogadoId: string) {

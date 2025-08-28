@@ -72,8 +72,11 @@ async login(email: string) {
     });
   }
 
-  async listarUsuariosDaEmpresa(empresaId: string) {
-    return await prismaClient.usuario.findMany({
+  async listarUsuariosDaEmpresa(empresaId: string, page: number = 1, limit: number = 10) {
+    const skip = (page - 1) * limit;
+    
+    // Buscar usuários com paginação
+    const usuarios = await prismaClient.usuario.findMany({
       where: { empresaId },
       select: {
         id: true,
@@ -84,7 +87,25 @@ async login(email: string) {
         tipo: true,
         criadoEm: true,
       },
+      skip: skip,
+      take: limit,
+      orderBy: {
+        criadoEm: 'desc',
+      },
     });
+    
+    // Contar total de usuários
+    const totalUsuarios = await prismaClient.usuario.count({
+      where: { empresaId },
+    });
+    
+    const totalPaginas = Math.ceil(totalUsuarios / limit);
+    
+    return {
+      usuarios,
+      totalUsuarios,
+      totalPaginas,
+    };
   }
 
   async verificarSeUsuarioPertenceEmpresa(usuarioId: string, empresaId: string) {
