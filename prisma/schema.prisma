@@ -45,7 +45,6 @@ model Loja {
   id           String      @id @default(uuid())
   nome         String
   numero       String
-  metragem     Float
   localizacao  String
   status       StatusLoja
   empresaId    String

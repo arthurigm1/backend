@@ -9,7 +9,6 @@ export class LojaModel {
       data: {
         nome: dados.nome,
         numero: dados.numero,
-        metragem: dados.metragem,
         localizacao: dados.localizacao,
         status: dados.status,
         empresaId: dados.empresaId,
