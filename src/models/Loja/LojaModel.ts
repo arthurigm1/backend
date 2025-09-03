@@ -43,8 +43,37 @@ export class LojaModel {
     });
   }
 
-  async listarLojasDaEmpresa(empresaId: string) {
-    return await prismaClient.loja.findMany({
+  async listarLojasDaEmpresa(empresaId: string, page?: number, limit?: number) {
+    // Se não há paginação, retorna todas as lojas
+    if (!page || !limit) {
+      return await prismaClient.loja.findMany({
+        where: { empresaId },
+        include: {
+          contratos: {
+            where: { ativo: true },
+            include: {
+              inquilino: {
+                select: {
+                  id: true,
+                  nome: true,
+                  email: true,
+                },
+              },
+            },
+          },
+        },
+        orderBy: {
+          numero: 'asc',
+        },
+      });
+    }
+
+    // Calcular skip e take para paginação
+    const skip = (page - 1) * limit;
+    const take = limit;
+
+    // Buscar lojas com paginação
+    const lojas = await prismaClient.loja.findMany({
       where: { empresaId },
       include: {
         contratos: {
@@ -63,7 +92,23 @@ export class LojaModel {
       orderBy: {
         numero: 'asc',
       },
+      skip,
+      take,
     });
+
+    // Contar total de lojas
+    const totalLojas = await prismaClient.loja.count({
+      where: { empresaId },
+    });
+
+    // Calcular total de páginas
+    const totalPaginas = Math.ceil(totalLojas / limit);
+
+    return {
+      lojas,
+      totalLojas,
+      totalPaginas,
+    };
   }
 
   async buscarPorNumero(numero: string, empresaId: string) {

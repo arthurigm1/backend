@@ -24,14 +24,14 @@ export class LojaService {
     return loja;
   }
 
-  async listarLojasDaEmpresa(empresaId: string, usuarioId: string) {
+  async listarLojasDaEmpresa(empresaId: string, usuarioId: string, page?: number, limit?: number) {
     // Verificar se o usuário pertence à empresa
     const usuarioValido = await usuarioModel.verificarSeUsuarioPertenceEmpresa(usuarioId, empresaId);
     if (!usuarioValido) {
       throw new ApiError(403, "Você não tem permissão para visualizar lojas desta empresa");
     }
 
-    return await lojaModel.listarLojasDaEmpresa(empresaId);
+    return await lojaModel.listarLojasDaEmpresa(empresaId, page, limit);
   }
 
   async buscarLojaPorId(id: string, usuarioId: string) {
