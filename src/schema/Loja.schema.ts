@@ -7,7 +7,6 @@ export const criarLojaSchema = z.object({
   numero: z.string().min(1, "Número da loja é obrigatório"),
   localizacao: z.string().min(1, "Localização é obrigatória"),
   status: statusLojaEnum.default('VAGA'),
-  empresaId: z.string().min(1, "ID da empresa é obrigatório"),
 });
 
 export const vincularInquilinoSchema = z.object({
@@ -21,4 +20,15 @@ export const vincularInquilinoSchema = z.object({
 
 export const atualizarStatusLojaSchema = z.object({
   status: statusLojaEnum,
+});
+
+export const editarLojaSchema = z.object({
+  nome: z.string().min(1, "Nome da loja é obrigatório").optional(),
+  numero: z.string().min(1, "Número da loja é obrigatório").optional(),
+  localizacao: z.string().min(1, "Localização é obrigatória").optional(),
+  status: statusLojaEnum.optional(),
+  vincularInquilino: z.object({
+    inquilinoId: z.string().min(1, "ID do inquilino é obrigatório"),
+  }).optional(),
+  desvincularInquilino: z.boolean().optional(),
 });

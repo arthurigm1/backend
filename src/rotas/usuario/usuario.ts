@@ -15,6 +15,7 @@ router.post("/solicitar-redefinicao-senha", usuarioController.solicitarRedefinic
 // Rotas protegidas
 router.post("/criar-inquilino", authenticateJWT, usuarioController.createTenant);
 router.get("/empresa/usuarios", authenticateJWT, usuarioController.listarUsuariosDaEmpresa);
+router.get("/inquilinos", authenticateJWT, usuarioController.listarInquilinos);
 router.get("/id/:id", authenticateJWT, usuarioController.buscarPorId);
 router.post("/redefinir-senha", authenticateJWT,usuarioController.redefinirSenha);
 

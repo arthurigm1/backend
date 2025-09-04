@@ -184,4 +184,23 @@ async login(email: string) {
       },
     });
   }
+
+  async listarInquilinosDaEmpresa(empresaId: string) {
+    return await prismaClient.usuario.findMany({
+      where: {
+        empresaId: empresaId,
+        tipo: 'INQUILINO',
+      },
+      select: {
+        id: true,
+        nome: true,
+        email: true,
+        cpf: true,
+        telefone: true,
+      },
+      orderBy: {
+        nome: 'asc',
+      },
+    });
+  }
 }

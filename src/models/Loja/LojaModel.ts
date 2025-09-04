@@ -127,34 +127,6 @@ export class LojaModel {
     });
   }
 
-  async vincularInquilino(dados: IVincularInquilino) {
-    // Criar contrato e atualizar status da loja para OCUPADA
-    const resultado = await prismaClient.$transaction(async (prisma) => {
-      // Criar o contrato
-      const contrato = await prisma.contrato.create({
-        data: {
-          lojaId: dados.lojaId,
-          inquilinoId: dados.inquilinoId,
-          valorAluguel: dados.valorAluguel,
-          dataInicio: dados.dataInicio,
-          dataFim: dados.dataFim || new Date(),
-          reajusteAnual: dados.reajusteAnual,
-          ativo: true,
-        },
-      });
-
-      // Atualizar status da loja para OCUPADA
-      await prisma.loja.update({
-        where: { id: dados.lojaId },
-        data: { status: 'OCUPADA' },
-      });
-
-      return contrato;
-    });
-
-    return resultado;
-  }
-
   async verificarSeLojaPerteceEmpresa(lojaId: string, empresaId: string) {
     const loja = await prismaClient.loja.findFirst({
       where: {
@@ -163,5 +135,57 @@ export class LojaModel {
       },
     });
     return !!loja;
+  }
+
+  async editarLoja(id: string, dados: any) {
+    const updateData: any = {};
+
+    // Campos básicos da loja
+    if (dados.nome !== undefined) updateData.nome = dados.nome;
+    if (dados.numero !== undefined) updateData.numero = dados.numero;
+    if (dados.localizacao !== undefined) updateData.localizacao = dados.localizacao;
+    if (dados.status !== undefined) updateData.status = dados.status;
+
+
+
+    // Se está vinculando inquilino
+    if (dados.vincularInquilino) {
+      updateData.usuarioId = dados.vincularInquilino.inquilinoId;
+      updateData.status = 'OCUPADA';
+    }
+
+    // Atualizar loja
+    return await prismaClient.loja.update({
+      where: { id },
+      data: updateData,
+      include: {
+        usuario: {
+          select: {
+            id: true,
+            nome: true,
+            email: true,
+          },
+        },
+      },
+    });
+  }
+
+  async desvincularInquilino(id: string) {
+    return await prismaClient.loja.update({
+      where: { id },
+      data: {
+        usuarioId: null,
+        status: 'VAGA',
+      },
+      include: {
+        usuario: {
+          select: {
+            id: true,
+            nome: true,
+            email: true,
+          },
+        },
+      },
+    });
   }
 }

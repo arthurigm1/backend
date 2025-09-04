@@ -35,6 +35,7 @@ model Usuario {
   resetPasswordToken     String?
   resetPasswordExpires   DateTime?
   empresa                Empresa       @relation(fields: [empresaId], references: [id])
+  lojas                  Loja[]        // Lojas onde o usuário é inquilino
   contratos              Contrato[]
   pagamentos             Pagamento[]
   notificacoes           Notificacao[]
@@ -48,7 +49,9 @@ model Loja {
   localizacao  String
   status       StatusLoja
   empresaId    String
+  usuarioId    String?     // ID do inquilino vinculado diretamente
   empresa      Empresa     @relation(fields: [empresaId], references: [id])
+  usuario      Usuario?    @relation(fields: [usuarioId], references: [id])
   contratos    Contrato[]
   criadoEm     DateTime    @default(now())
 }

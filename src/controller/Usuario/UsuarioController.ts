@@ -216,4 +216,25 @@ export class UsuarioController {
       });
     }
   }
+
+  async listarInquilinos(req: Request, res: Response): Promise<Response> {
+    try {
+      const usuarioId = req.user?.id;
+      const empresaId = req.user?.empresaId;
+      
+      if (!usuarioId || !empresaId) {
+        return res.status(401).json({ error: "Usuário não autenticado" });
+      }
+
+      const inquilinos = await usuarioService.listarInquilinos(empresaId, usuarioId);
+      return res.status(200).json({
+        sucesso: true,
+        inquilinos: inquilinos,
+      });
+    } catch (error: any) {
+      return res.status(error.statusCode || 500).json({
+        error: error.message || "Erro interno do servidor",
+      });
+    }
+  }
 }

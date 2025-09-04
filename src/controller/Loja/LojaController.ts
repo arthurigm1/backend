@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { LojaService } from "../../service/Loja/LojaService";
-import { criarLojaSchema, vincularInquilinoSchema, atualizarStatusLojaSchema } from "../../schema/Loja.schema";
+import { criarLojaSchema, vincularInquilinoSchema, atualizarStatusLojaSchema, editarLojaSchema } from "../../schema/Loja.schema";
 
 const lojaService = new LojaService();
 
@@ -16,11 +16,18 @@ export class LojaController {
       }
 
       const usuarioId = req.user?.id;
-      if (!usuarioId) {
+      const empresaId = req.user?.empresaId;
+      
+      if (!usuarioId || !empresaId) {
         return res.status(401).json({ error: "Usuário não autenticado" });
       }
 
-      const loja = await lojaService.criarLoja(data.data, usuarioId);
+      const dadosLoja = {
+        ...data.data,
+        empresaId: empresaId
+      };
+
+      const loja = await lojaService.criarLoja(dadosLoja, usuarioId);
       return res.status(201).json({
         sucesso: true,
         mensagem: "Loja criada com sucesso",
@@ -35,11 +42,11 @@ export class LojaController {
 
   async listarLojasDaEmpresa(req: Request, res: Response): Promise<Response> {
     try {
-      const { empresaId } = req.params;
       const { page = '1', limit = '10' } = req.query;
       const usuarioId = req.user?.id;
+      const empresaId = req.user?.empresaId;
       
-      if (!usuarioId) {
+      if (!usuarioId || !empresaId) {
         return res.status(401).json({ error: "Usuário não autenticado" });
       }
 
@@ -105,38 +112,10 @@ export class LojaController {
     }
   }
 
-  async vincularInquilino(req: Request, res: Response): Promise<Response> {
-    try {
-      const data = vincularInquilinoSchema.safeParse(req.body);
-      if (!data.success) {
-        return res.status(400).json({ 
-          error: "Dados inválidos",
-          details: data.error.errors 
-        });
-      }
-
-      const usuarioId = req.user?.id;
-      if (!usuarioId) {
-        return res.status(401).json({ error: "Usuário não autenticado" });
-      }
-
-      const contrato = await lojaService.vincularInquilino(data.data, usuarioId);
-      return res.status(201).json({
-        sucesso: true,
-        mensagem: "Inquilino vinculado à loja com sucesso",
-        contrato: contrato,
-      });
-    } catch (error: any) {
-      return res.status(error.statusCode || 500).json({
-        error: error.message || "Erro interno do servidor",
-      });
-    }
-  }
-
-  async atualizarStatus(req: Request, res: Response): Promise<Response> {
+  async editarLoja(req: Request, res: Response): Promise<Response> {
     try {
       const { id } = req.params;
-      const data = atualizarStatusLojaSchema.safeParse(req.body);
+      const data = editarLojaSchema.safeParse(req.body);
       
       if (!data.success) {
         return res.status(400).json({ 
@@ -146,14 +125,39 @@ export class LojaController {
       }
 
       const usuarioId = req.user?.id;
-      if (!usuarioId) {
+      const empresaId = req.user?.empresaId;
+      
+      if (!usuarioId || !empresaId) {
         return res.status(401).json({ error: "Usuário não autenticado" });
       }
 
-      const loja = await lojaService.atualizarStatusLoja(id, data.data.status, usuarioId);
+      const loja = await lojaService.editarLoja(id, data.data, usuarioId, empresaId);
       return res.status(200).json({
         sucesso: true,
-        mensagem: "Status da loja atualizado com sucesso",
+        mensagem: "Loja editada com sucesso",
+        loja: loja,
+      });
+    } catch (error: any) {
+      return res.status(error.statusCode || 500).json({
+        error: error.message || "Erro interno do servidor",
+      });
+    }
+  }
+
+  async desvincularInquilino(req: Request, res: Response): Promise<Response> {
+    try {
+      const { id } = req.params;
+      const usuarioId = req.user?.id;
+      const empresaId = req.user?.empresaId;
+      
+      if (!usuarioId || !empresaId) {
+        return res.status(401).json({ error: "Usuário não autenticado" });
+      }
+
+      const loja = await lojaService.desvincularInquilino(id, usuarioId, empresaId);
+      return res.status(200).json({
+        sucesso: true,
+        mensagem: "Inquilino desvinculado com sucesso",
         loja: loja,
       });
     } catch (error: any) {

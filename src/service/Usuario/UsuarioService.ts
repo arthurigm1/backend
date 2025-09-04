@@ -101,7 +101,7 @@ export class UsuarioService {
       throw new ApiError(401, "Usuário ou senha inválidos");
     }
 
-    if (usuario.tipo !== TipoUsuario.INQUILINO ) {
+    if (usuario.tipo === TipoUsuario.INQUILINO ) {
       throw new ApiError(401, "Usuário tipo inquilino não acessa esta rota!!");
     }
     
@@ -222,5 +222,21 @@ export class UsuarioService {
       sucesso: true, 
       mensagem: "Senha redefinida com sucesso" 
     };
+  }
+
+  async listarInquilinos(empresaId: string, usuarioLogadoId: string) {
+    // Verificar se o usuário logado existe e pertence à empresa
+    const usuarioLogado = await usuarioModel.buscarPorId(usuarioLogadoId);
+    if (!usuarioLogado) {
+      throw new ApiError(404, "Usuário não encontrado");
+    }
+
+    if (usuarioLogado.empresaId !== empresaId) {
+      throw new ApiError(403, "Você não tem permissão para listar inquilinos desta empresa");
+    }
+
+    // Listar apenas inquilinos da empresa
+    const inquilinos = await usuarioModel.listarInquilinosDaEmpresa(empresaId);
+    return inquilinos;
   }
 }

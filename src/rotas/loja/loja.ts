@@ -15,15 +15,16 @@ router.use(authenticateJWT);
 router.post("/criar", requireAdmin, lojaController.create);
 
 // Listar lojas da empresa
-router.get("/empresa/:empresaId", lojaController.listarLojasDaEmpresa);
+router.get("/empresa", lojaController.listarLojasDaEmpresa);
 
 // Buscar loja por ID
 router.get("/id/:id", lojaController.buscarPorId);
 
-// Vincular inquilino à loja (apenas ADMIN_EMPRESA)
-router.post("/vincular-inquilino", requireAdmin, lojaController.vincularInquilino);
 
-// Atualizar status da loja (apenas ADMIN_EMPRESA)
-router.patch("/status/:id", requireAdmin, lojaController.atualizarStatus);
+// Editar loja (apenas ADMIN_EMPRESA)
+router.put("/editar/:id", requireAdmin, lojaController.editarLoja);
+
+// Desvincular inquilino (apenas ADMIN_EMPRESA)
+router.delete("/desvincular/:id", requireAdmin, lojaController.desvincularInquilino);
 
 export default router;
