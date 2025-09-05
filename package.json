@@ -26,6 +26,7 @@
     "morgan": "^1.10.0",
     "multer": "^2.0.1",
     "nodemailer": "^7.0.5",
+    "sdk-node-apis-efi": "^1.2.25",
     "zod": "^3.25.76"
   },
   "devDependencies": {

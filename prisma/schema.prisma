@@ -57,18 +57,23 @@ model Loja {
 }
 
 model Contrato {
-  id              String     @id @default(uuid())
-  lojaId          String
-  inquilinoId     String
-  valorAluguel    Float
-  dataInicio      DateTime
-  dataFim         DateTime
-  reajusteAnual   Boolean
-  ativo           Boolean    @default(true)
-  loja            Loja       @relation(fields: [lojaId], references: [id])
-  inquilino       Usuario    @relation(fields: [inquilinoId], references: [id])
-  pagamentos      Pagamento[]
-  criadoEm        DateTime   @default(now())
+  id                    String          @id @default(uuid())
+  lojaId                String
+  inquilinoId           String
+  valorAluguel          Float
+  dataInicio            DateTime
+  dataFim               DateTime
+  reajusteAnual         Boolean         @default(false)
+  percentualReajuste    Float?          // Percentual de reajuste anual (ex: 5.5 para 5.5%)
+  clausulas             String?         // Cláusulas específicas do contrato
+  observacoes           String?
+  status                StatusContrato  @default(ATIVO)
+  ativo                 Boolean         @default(true)
+  loja                  Loja            @relation(fields: [lojaId], references: [id])
+  inquilino             Usuario         @relation(fields: [inquilinoId], references: [id])
+  pagamentos            Pagamento[]
+  criadoEm              DateTime        @default(now())
+  atualizadoEm          DateTime        @updatedAt
 }
 
 model Pagamento {
@@ -112,6 +117,13 @@ enum StatusPagamento {
   PAGO
   ATRASADO
   CANCELADO
+}
+
+enum StatusContrato {
+  ATIVO
+  VENCIDO
+  RESCINDIDO
+  SUSPENSO
 }
 
 enum TipoNotificacao {
