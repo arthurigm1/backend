@@ -126,6 +126,32 @@ async listarLojas(empresaId: string, usuarioId: string, filtros: any, page: numb
     return await lojaModel.editarLoja(id, data);
   }
 
+  async desativarLoja(id: string, usuarioId: string, empresaId: string) {
+    // Verificar se o usuário pertence à empresa
+    const usuarioValido = await usuarioModel.verificarSeUsuarioPertenceEmpresa(usuarioId, empresaId);
+    if (!usuarioValido) {
+      throw new ApiError(403, "Você não tem permissão para desativar lojas desta empresa");
+    }
+
+    // Verificar se a loja existe e pertence à empresa
+    const loja = await lojaModel.buscarPorId(id);
+    if (!loja) {
+      throw new ApiError(404, "Loja não encontrada");
+    }
+
+    if (loja.empresaId !== empresaId) {
+      throw new ApiError(403, "Você não tem permissão para desativar esta loja");
+    }
+
+    // Verificar se a loja já está inativa
+    if (loja.status === 'INATIVA') {
+      throw new ApiError(400, "A loja já está inativa");
+    }
+
+    // Desativar a loja (alterar status para INATIVA)
+    return await lojaModel.desativarLoja(id);
+  }
+
   async desvincularInquilino(id: string, usuarioId: string, empresaId: string) {
     // Verificar se a loja existe e pertence à empresa
     const loja = await lojaModel.buscarPorId(id);

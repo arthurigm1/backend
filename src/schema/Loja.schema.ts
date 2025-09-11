@@ -45,3 +45,7 @@ export const listarLojasSchema = z.object({
 export const buscarLojaPorIdSchema = z.object({
   id: z.string().min(1, "ID da loja é obrigatório"),
 });
+
+export const desativarLojaSchema = z.object({
+  id: z.string().min(1, "ID da loja é obrigatório"),
+});

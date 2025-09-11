@@ -14,6 +14,7 @@ export class LojaModel {
         empresaId: dados.empresaId,
       },
     });
+
     return loja;
   }
 
@@ -276,6 +277,15 @@ async listarLojas(empresaId: string, filtros: any, page: number, limit: number) 
             email: true,
           },
         },
+      },
+    });
+  }
+
+  async desativarLoja(id: string) {
+    return await prismaClient.loja.update({
+      where: { id },
+      data: {
+        status: 'INATIVA',
       },
     });
   }

@@ -25,12 +25,12 @@ router.get("/empresa", lojaController.listarLojasDaEmpresa);
 // Buscar loja por ID
 router.get("/:id", lojaController.buscarPorId);
 
-// Buscar loja por ID (rota alternativa)
-router.get("/id/:id", lojaController.buscarPorId);
-
 
 // Editar loja (apenas ADMIN_EMPRESA)
 router.put("/editar/:id", requireAdmin, lojaController.editarLoja);
+
+// Desativar loja (apenas ADMIN_EMPRESA)
+router.patch("/desativar/:id", requireAdmin, lojaController.desativarLoja);
 
 // Desvincular inquilino (apenas ADMIN_EMPRESA)
 router.delete("/desvincular/:id", requireAdmin, lojaController.desvincularInquilino);

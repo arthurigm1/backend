@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { LojaService } from "../../service/Loja/LojaService";
-import { criarLojaSchema, vincularInquilinoSchema, atualizarStatusLojaSchema, editarLojaSchema, listarLojasSchema, buscarLojaPorIdSchema } from "../../schema/Loja.schema";
+import { criarLojaSchema, vincularInquilinoSchema, atualizarStatusLojaSchema, editarLojaSchema, listarLojasSchema, buscarLojaPorIdSchema, desativarLojaSchema } from "../../schema/Loja.schema";
 
 const lojaService = new LojaService();
 
@@ -209,6 +209,37 @@ async listarLojas(req: Request, res: Response): Promise<Response> {
         sucesso: true,
         mensagem: "Inquilino desvinculado com sucesso",
         loja: loja,
+      });
+    } catch (error: any) {
+      return res.status(error.statusCode || 500).json({
+        error: error.message || "Erro interno do servidor",
+      });
+    }
+  }
+
+  async desativarLoja(req: Request, res: Response): Promise<Response> {
+    try {
+      const data = desativarLojaSchema.safeParse(req.params);
+      if (!data.success) {
+        return res.status(400).json({ 
+          error: "Parâmetros inválidos",
+          details: data.error.errors 
+        });
+      }
+
+      const usuarioId = req.user?.id;
+      const empresaId = req.user?.empresaId;
+      
+      if (!usuarioId || !empresaId) {
+        return res.status(401).json({ error: "Usuário não autenticado" });
+      }
+
+      const { id } = data.data;
+      await lojaService.desativarLoja(id, usuarioId, empresaId);
+      
+      return res.status(200).json({
+        sucesso: true,
+        mensagem: "Loja desativada com sucesso"
       });
     } catch (error: any) {
       return res.status(error.statusCode || 500).json({
