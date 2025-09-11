@@ -33,17 +33,31 @@ export class LojaService {
 
     return await lojaModel.listarLojasDaEmpresa(empresaId, page, limit);
   }
+async listarLojas(empresaId: string, usuarioId: string, filtros: any, page: number, limit: number) {
+  // Verificar se o usuário pertence à empresa pelo token JWT
+  const usuarioValido = await usuarioModel.verificarSeUsuarioPertenceEmpresa(usuarioId, empresaId);
+  if (!usuarioValido) {
+    throw new ApiError(403, "Você não tem permissão para visualizar lojas desta empresa");
+  }
+  
+  return await lojaModel.listarLojas(empresaId, filtros, page, limit);
+}
 
-  async buscarLojaPorId(id: string, usuarioId: string) {
+  async buscarLojaPorId(id: string, usuarioId: string, empresaId: string) {
+    // Verificar se o usuário pertence à empresa
+    const usuarioValido = await usuarioModel.verificarSeUsuarioPertenceEmpresa(usuarioId, empresaId);
+    if (!usuarioValido) {
+      throw new ApiError(403, "Você não tem permissão para visualizar lojas desta empresa");
+    }
+
     const loja = await lojaModel.buscarPorId(id);
     if (!loja) {
       throw new ApiError(404, "Loja não encontrada");
     }
 
-    // Verificar se o usuário pertence à empresa da loja
-    const usuarioValido = await usuarioModel.verificarSeUsuarioPertenceEmpresa(usuarioId, loja.empresaId);
-    if (!usuarioValido) {
-      throw new ApiError(403, "Você não tem permissão para visualizar esta loja");
+    // Verificar se a loja pertence à empresa do usuário
+    if (loja.empresaId !== empresaId) {
+      throw new ApiError(403, "Esta loja não pertence à sua empresa");
     }
 
     return loja;

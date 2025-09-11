@@ -32,3 +32,16 @@ export const editarLojaSchema = z.object({
   }).optional(),
   desvincularInquilino: z.boolean().optional(),
 });
+
+export const listarLojasSchema = z.object({
+  nome: z.string().optional(),
+  status: statusLojaEnum.optional(),
+  numero: z.string().optional(),
+  localizacao: z.string().optional(),
+  page: z.string().transform((val) => parseInt(val, 10)).refine((val) => val > 0, "Página deve ser maior que 0").optional().default("1"),
+  limit: z.string().transform((val) => parseInt(val, 10)).refine((val) => val > 0 && val <= 100, "Limite deve ser entre 1 e 100").optional().default("10"),
+});
+
+export const buscarLojaPorIdSchema = z.object({
+  id: z.string().min(1, "ID da loja é obrigatório"),
+});

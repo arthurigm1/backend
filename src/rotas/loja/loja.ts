@@ -7,6 +7,8 @@ import { requireAdmin } from "../../middleware/admin.middleware";
 const router = Router();
 const lojaController = new LojaController();
 
+
+
 // Todas as rotas de loja requerem autenticação
 router.use(authenticateJWT);
 
@@ -14,10 +16,16 @@ router.use(authenticateJWT);
 // Criar nova loja (apenas ADMIN_EMPRESA)
 router.post("/criar", requireAdmin, lojaController.create);
 
+// Listar todas as lojas
+router.get("/", lojaController.listarLojas);
+
 // Listar lojas da empresa
 router.get("/empresa", lojaController.listarLojasDaEmpresa);
 
 // Buscar loja por ID
+router.get("/:id", lojaController.buscarPorId);
+
+// Buscar loja por ID (rota alternativa)
 router.get("/id/:id", lojaController.buscarPorId);
 
 

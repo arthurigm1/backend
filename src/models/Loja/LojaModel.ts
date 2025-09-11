@@ -28,6 +28,13 @@ export class LojaModel {
             cnpj: true,
           },
         },
+        usuario: {
+          select: {
+            id: true,
+            nome: true,
+            email: true,
+          },
+        },
         contratos: {
           include: {
             inquilino: {
@@ -110,6 +117,90 @@ export class LojaModel {
       totalPaginas,
     };
   }
+
+async listarLojas(empresaId: string, filtros: any, page: number, limit: number) {
+  try {
+    // Construir where clause com filtros opcionais
+    const whereClause: any = {
+      empresaId: empresaId, // Filtro obrigatório por empresa
+    };
+
+    // Aplicar filtros opcionais apenas se fornecidos e não vazios
+    if (filtros?.nome && typeof filtros.nome === 'string' && filtros.nome.trim() !== '') {
+      whereClause.nome = {
+        contains: filtros.nome.trim(),
+      };
+    }
+
+    if (filtros?.status && typeof filtros.status === 'string' && filtros.status.trim() !== '') {
+      whereClause.status = filtros.status.trim();
+    }
+
+    if (filtros?.numero && typeof filtros.numero === 'string' && filtros.numero.trim() !== '') {
+      whereClause.numero = {
+        contains: filtros.numero.trim(),
+      };
+    }
+
+    if (filtros?.localizacao && typeof filtros.localizacao === 'string' && filtros.localizacao.trim() !== '') {
+      whereClause.localizacao = {
+        contains: filtros.localizacao.trim(),
+      };
+    }
+
+    // Calcular paginação
+    const skip = (page - 1) * limit;
+    const take = limit;
+
+    // Buscar lojas com filtros aplicados
+    const lojas = await prismaClient.loja.findMany({
+      where: whereClause,
+      include: {
+        usuario: {
+          select: {
+            id: true,
+            nome: true,
+            email: true,
+          },
+        },
+        contratos: {
+          where: { ativo: true },
+          include: {
+            inquilino: {
+              select: {
+                id: true,
+                nome: true,
+                email: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: {
+        numero: 'asc',
+      },
+      skip,
+      take,
+    });
+
+    // Contar total de lojas que atendem aos filtros
+    const totalLojas = await prismaClient.loja.count({
+      where: whereClause,
+    });
+
+    // Calcular total de páginas
+    const totalPaginas = totalLojas > 0 ? Math.ceil(totalLojas / limit) : 0;
+
+    return {
+      lojas,
+      totalLojas,
+      totalPaginas,
+    };
+  } catch (error) {
+    console.error('Erro ao listar lojas:', error);
+    throw error;
+  }
+}
 
   async buscarPorNumero(numero: string, empresaId: string) {
     return await prismaClient.loja.findFirst({

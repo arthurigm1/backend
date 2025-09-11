@@ -1,10 +1,12 @@
 import { Request, Response } from "express";
 import { LojaService } from "../../service/Loja/LojaService";
-import { criarLojaSchema, vincularInquilinoSchema, atualizarStatusLojaSchema, editarLojaSchema } from "../../schema/Loja.schema";
+import { criarLojaSchema, vincularInquilinoSchema, atualizarStatusLojaSchema, editarLojaSchema, listarLojasSchema, buscarLojaPorIdSchema } from "../../schema/Loja.schema";
 
 const lojaService = new LojaService();
 
 export class LojaController {
+
+
   async create(req: Request, res: Response): Promise<Response> {
     try {
       const data = criarLojaSchema.safeParse(req.body);
@@ -40,6 +42,45 @@ export class LojaController {
     }
   }
 
+async listarLojas(req: Request, res: Response): Promise<Response> {
+  try {
+    const data = listarLojasSchema.safeParse(req.query);
+    if (!data.success) {
+      return res.status(400).json({ 
+        error: "Parâmetros inválidos",
+        details: data.error.errors 
+      });
+    }
+
+    // Pegar empresaId e usuarioId do token JWT
+    const usuarioId = req.user?.id;
+    const empresaId = req.user?.empresaId;
+    
+    if (!usuarioId || !empresaId) {
+      return res.status(401).json({ error: "Usuário não autenticado" });
+    }
+
+    const { nome, status, numero, localizacao, page, limit } = data.data;
+    const filtros = { nome, status, numero, localizacao };
+    
+    const resultado = await lojaService.listarLojas(empresaId, usuarioId, filtros, page, limit);
+    
+    return res.status(200).json({
+      sucesso: true,
+      lojas: resultado.lojas,
+      paginacao: {
+        paginaAtual: page,
+        limitePorPagina: limit,
+        totalLojas: resultado.totalLojas,
+        totalPaginas: resultado.totalPaginas
+      }
+    });
+  } catch (error: any) {
+    return res.status(error.statusCode || 500).json({
+      error: error.message || "Erro interno do servidor",
+    });
+  }
+}
   async listarLojasDaEmpresa(req: Request, res: Response): Promise<Response> {
     try {
       const { page = '1', limit = '10' } = req.query;
@@ -93,14 +134,23 @@ export class LojaController {
 
   async buscarPorId(req: Request, res: Response): Promise<Response> {
     try {
-      const { id } = req.params;
+      const data = buscarLojaPorIdSchema.safeParse(req.params);
+      if (!data.success) {
+        return res.status(400).json({ 
+          error: "Parâmetros inválidos",
+          details: data.error.errors 
+        });
+      }
+
       const usuarioId = req.user?.id;
+      const empresaId = req.user?.empresaId;
       
-      if (!usuarioId) {
+      if (!usuarioId || !empresaId) {
         return res.status(401).json({ error: "Usuário não autenticado" });
       }
 
-      const loja = await lojaService.buscarLojaPorId(id, usuarioId);
+      const { id } = data.data;
+      const loja = await lojaService.buscarLojaPorId(id, usuarioId, empresaId);
       return res.status(200).json({
         sucesso: true,
         loja: loja,
