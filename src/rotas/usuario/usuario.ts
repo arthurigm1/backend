@@ -2,6 +2,7 @@ import { Router } from "express";
 import { UsuarioController } from "../../controller/Usuario/UsuarioController";
 import { authenticateJWT } from "../../middleware/auth.middleware";
 
+
 const router = Router();
 const usuarioController = new UsuarioController();
 
@@ -18,5 +19,6 @@ router.get("/empresa/usuarios", authenticateJWT, usuarioController.listarUsuario
 router.get("/inquilinos", authenticateJWT, usuarioController.listarInquilinos);
 router.get("/id/:id", authenticateJWT, usuarioController.buscarPorId);
 router.post("/redefinir-senha", authenticateJWT,usuarioController.redefinirSenha);
+
 
 export default router;

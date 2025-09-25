@@ -258,4 +258,8 @@ export class ContratoService {
   async atualizarStatusContratosVencidos() {
     return await contratoModel.atualizarStatusContratosVencidos();
   }
+
+  async buscarUsuariosEmpresaPorContrato(contratoId: string) {
+    return await contratoModel.buscarUsuariosEmpresaPorContrato(contratoId);
+  }
 }

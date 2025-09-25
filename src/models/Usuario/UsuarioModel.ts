@@ -1,8 +1,8 @@
 import { ICriarUsuario, ICriarInquilino, ILoginUsuario, ICriarUsuarioComEmpresa, ISolicitarRedefinicaoSenha, IRedefinirSenha } from "../../interface/Usuario/Usuario";
 import { PrismaClient, TipoUsuario } from "../../generated/prisma";
+import * as bcrypt from "bcrypt";
 
 const prismaClient = new PrismaClient();
-import bcrypt from "bcrypt";
 
 export class UsuarioModel {
   async criarUsuario(usuario: ICriarUsuarioComEmpresa) {

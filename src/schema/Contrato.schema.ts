@@ -8,6 +8,7 @@ export const criarContratoSchema = z.object({
   valorAluguel: z.number().positive("Valor do aluguel deve ser positivo"),
   dataInicio: z.string().transform((str) => new Date(str)),
   dataFim: z.string().transform((str) => new Date(str)),
+  dataVencimento: z.number().min(1, "Dia de vencimento deve ser no mínimo 1").max(31, "Dia de vencimento deve ser no máximo 31"),
   reajusteAnual: z.boolean().default(false),
   percentualReajuste: z.number().min(0, "Percentual de reajuste não pode ser negativo").max(100, "Percentual de reajuste não pode ser maior que 100%").optional(),
   clausulas: z.string().max(2000, "Cláusulas não podem exceder 2000 caracteres").optional(),
@@ -22,6 +23,7 @@ export const criarContratoSchema = z.object({
 export const atualizarContratoSchema = z.object({
   valorAluguel: z.number().positive("Valor do aluguel deve ser positivo").optional(),
   dataFim: z.string().transform((str) => new Date(str)).optional(),
+  dataVencimento: z.number().min(1, "Dia de vencimento deve ser no mínimo 1").max(31, "Dia de vencimento deve ser no máximo 31").optional(),
   reajusteAnual: z.boolean().optional(),
   percentualReajuste: z.number().min(0, "Percentual de reajuste não pode ser negativo").max(100, "Percentual de reajuste não pode ser maior que 100%").optional(),
   clausulas: z.string().max(2000, "Cláusulas não podem exceder 2000 caracteres").optional(),

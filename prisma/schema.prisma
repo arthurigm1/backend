@@ -57,29 +57,55 @@ model Loja {
 }
 
 model Contrato {
-  id              String     @id @default(uuid())
-  lojaId          String
-  inquilinoId     String
-  valorAluguel    Float
-  dataInicio      DateTime
-  dataFim         DateTime
-  reajusteAnual   Boolean
-  ativo           Boolean    @default(true)
-  loja            Loja       @relation(fields: [lojaId], references: [id])
-  inquilino       Usuario    @relation(fields: [inquilinoId], references: [id])
-  pagamentos      Pagamento[]
-  criadoEm        DateTime   @default(now())
+  id                  String        @id @default(uuid())
+  lojaId              String
+  inquilinoId         String
+  valorAluguel        Float
+  dataInicio          DateTime
+  dataFim             DateTime
+  dataVencimento      Int           @default(5) // Dia do mês para vencimento das faturas (1-31)
+  reajusteAnual       Boolean       @default(false)
+  percentualReajuste  Float?
+  clausulas           String?
+  observacoes         String?
+  status              StatusContrato @default(ATIVO)
+  ativo               Boolean       @default(true)
+  loja                Loja          @relation(fields: [lojaId], references: [id])
+  inquilino           Usuario       @relation(fields: [inquilinoId], references: [id])
+  pagamentos          Pagamento[]
+  faturas             Fatura[]      // Relacionamento com faturas
+  criadoEm            DateTime      @default(now())
+  atualizadoEm        DateTime      @updatedAt
+}
+
+model Fatura {
+  id                String        @id @default(uuid())
+  contratoId        String
+  mesReferencia     Int           // Mês (1-12)
+  anoReferencia     Int           // Ano
+  valorAluguel      Float
+  dataVencimento    DateTime
+  dataGeracao       DateTime      @default(now())
+  status            StatusFatura  @default(PENDENTE)
+  contrato          Contrato      @relation(fields: [contratoId], references: [id])
+  pagamentos        Pagamento[]
+  criadoEm          DateTime      @default(now())
+  atualizadoEm      DateTime      @updatedAt
+
+  @@unique([contratoId, mesReferencia, anoReferencia])
 }
 
 model Pagamento {
   id           String    @id @default(uuid())
   contratoId   String
+  faturaId     String?   // Relacionamento opcional com fatura
   usuarioId    String
   valor        Float
   dataVenc     DateTime
   dataPag      DateTime?
   status       StatusPagamento
   contrato     Contrato  @relation(fields: [contratoId], references: [id])
+  fatura       Fatura?   @relation(fields: [faturaId], references: [id])
   usuario      Usuario   @relation(fields: [usuarioId], references: [id])
   criadoEm     DateTime  @default(now())
 }
@@ -120,5 +146,19 @@ enum TipoNotificacao {
   PAGAMENTO_REALIZADO
   CONTRATO_VENCIMENTO
   GERAL
+}
+
+enum StatusContrato {
+  ATIVO
+  VENCIDO
+  RESCINDIDO
+  SUSPENSO
+}
+
+enum StatusFatura {
+  PENDENTE
+  PAGA
+  VENCIDA
+  CANCELADA
 }
 

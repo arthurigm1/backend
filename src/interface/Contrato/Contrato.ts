@@ -6,6 +6,7 @@ export interface ICriarContrato {
   valorAluguel: number;
   dataInicio: Date;
   dataFim: Date;
+  dataVencimento: number; // Dia do mês para vencimento das faturas (1-31)
   reajusteAnual?: boolean;
   percentualReajuste?: number;
   clausulas?: string;
@@ -19,6 +20,7 @@ export interface IContrato {
   valorAluguel: number;
   dataInicio: Date;
   dataFim: Date;
+  dataVencimento: number; // Dia do mês para vencimento das faturas (1-31)
   reajusteAnual: boolean;
   percentualReajuste: number | null;
   clausulas: string | null;
@@ -32,6 +34,7 @@ export interface IContrato {
 export interface IAtualizarContrato {
   valorAluguel?: number;
   dataFim?: Date;
+  dataVencimento?: number;
   reajusteAnual?: boolean;
   percentualReajuste?: number;
   clausulas?: string;

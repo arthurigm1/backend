@@ -12,7 +12,9 @@ router.use(authenticateJWT);
 // Criar novo contrato (apenas ADMIN_EMPRESA e FUNCIONARIO)
 router.post("/criar", requireAdmin, contratoController.criarContrato);
 
-// Listar contratos da empresa
+// Listar contratos da empresa com paginação
+// Query params: page (número da página), limit (itens por página), status, ativo, lojaId, inquilinoId, etc.
+// Exemplo: GET /empresa?page=1&limit=10&status=ATIVO
 router.get("/empresa", contratoController.listarContratosDaEmpresa);
 
 // Buscar contrato por ID

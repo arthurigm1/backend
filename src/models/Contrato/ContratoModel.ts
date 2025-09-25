@@ -6,7 +6,7 @@ import {
   IContratoComRelacoes,
   IListarContratosResponse 
 } from "../../interface/Contrato/Contrato";
-import { PrismaClient, StatusContrato } from "../../generated/prisma";
+import { PrismaClient, StatusContrato, StatusFatura } from "../../generated/prisma";
 
 const prismaClient = new PrismaClient();
 
@@ -19,12 +19,32 @@ export class ContratoModel {
         valorAluguel: dados.valorAluguel,
         dataInicio: dados.dataInicio,
         dataFim: dados.dataFim,
+        dataVencimento: dados.dataVencimento,
         reajusteAnual: dados.reajusteAnual || false,
         percentualReajuste: dados.percentualReajuste,
         clausulas: dados.clausulas,
         observacoes: dados.observacoes,
       },
     });
+
+    // Criar fatura para o próximo mês
+    const proximoMes = new Date();
+    proximoMes.setMonth(proximoMes.getMonth() + 1);
+    
+    // Data de vencimento baseada no dia especificado no contrato
+    const dataVencimentoFatura = new Date(proximoMes.getFullYear(), proximoMes.getMonth(), dados.dataVencimento);
+
+    await prismaClient.fatura.create({
+      data: {
+        contratoId: contrato.id,
+        mesReferencia: proximoMes.getMonth() + 1,
+        anoReferencia: proximoMes.getFullYear(),
+        valorAluguel: dados.valorAluguel,
+        dataVencimento: dataVencimentoFatura,
+        status: StatusFatura.PENDENTE,
+      }
+    });
+
     return contrato;
   }
 
@@ -340,5 +360,31 @@ export class ContratoModel {
     });
 
     return resultado.count;
+  }
+
+  async buscarUsuariosEmpresaPorContrato(contratoId: string): Promise<any[]> {
+    const contrato = await prismaClient.contrato.findUnique({
+      where: { id: contratoId },
+      include: {
+        loja: {
+          include: {
+            empresa: {
+              include: {
+                usuarios: {
+                  select: {
+                    id: true,
+                    nome: true,
+                    email: true,
+                    tipo: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    return contrato?.loja.empresa.usuarios || [];
   }
 }
