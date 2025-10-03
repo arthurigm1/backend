@@ -1,6 +1,6 @@
 import dotenv from "dotenv";
-import app from "./app";
-import { SchedulerService } from "./service/Scheduler/SchedulerService";
+import app from "./src/app";
+import { SchedulerService } from "./src/service/Scheduler/SchedulerService";
 
 dotenv.config();
 
