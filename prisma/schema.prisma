@@ -11,7 +11,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = "postgresql://postgres:RDIYuQCEKRggRxUkFazSoCAvDwdVBkQl@postgres.railway.internal:5432/railway"
+  url      = "postgresql://postgres:RDIYuQCEKRggRxUkFazSoCAvDwdVBkQl@hopper.proxy.rlwy.net:12237/railway"
 }
 
 
