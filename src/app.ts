@@ -1,6 +1,5 @@
 import "express-async-errors";
-import express from "express";
-import cors, { CorsOptions } from "cors";
+import express, { Request, Response, NextFunction } from "express";
 import morgan from "morgan";
 import helmet from "helmet";
 
@@ -9,48 +8,37 @@ import { errorHandler } from "./middleware/erromiddleware";
 
 const app = express();
 
-const ALLOWED_ORIGINS = new Set<string>([
-  "https://incomparable-snickerdoodle-0fe771.netlify.app", // prod
-  "http://localhost:4200",
-  "http://127.0.0.1:4200",
-  "http://localhost:5173",
-  "http://127.0.0.1:5173",
-]);
-
-const corsOptions: CorsOptions = {
-  origin(origin, cb) {
-    // Sem origin = ferramentas como curl/Postman -> liberar
-    if (!origin) return cb(null, true);
-    if (ALLOWED_ORIGINS.has(origin)) return cb(null, true);
-    return cb(new Error("Not allowed by CORS"));
-  },
-  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-  allowedHeaders: [
-    "Content-Type",
-    "Authorization",
-    "X-Requested-With",
-    // às vezes o browser pede também estes (dependendo do agente):
-    "Accept",
-  ],
-  credentials: true, // deixe true só se precisar enviar cookies
-  optionsSuccessStatus: 204, // evita 200 + body em proxies chatos
-};
-
-// CORS precisa vir antes de tudo
-app.use(cors(corsOptions));
-// atender explicitamente o preflight em todas as rotas
-app.options("*", cors(corsOptions));
+// Manual CORS middleware
+app.use((req: Request, res: Response, next: NextFunction) => {
+  const allowedOrigins = [
+    "https://incomparable-snickerdoodle-0fe771.netlify.app",
+    "http://localhost:4200",
+    "http://localhost:5173"
+  ];
+  
+  const origin = req.headers.origin as string;
+  
+  if (allowedOrigins.includes(origin)) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+  }
+  
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, PATCH, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With, Accept");
+  res.setHeader("Access-Control-Allow-Credentials", "false");
+  
+  // Handle preflight requests
+  if (req.method === "OPTIONS") {
+    return res.status(200).end();
+  }
+  
+  next();
+});
 
 app.use(morgan("tiny"));
 app.use(helmet());
 app.use(express.json());
 
-// opcional: health-check
-app.get("/health", (_req, res) => res.json({ ok: true }));
-
 app.use("/api", routes);
-
-// handler de erros por último
 app.use(errorHandler);
 
 export default app;
