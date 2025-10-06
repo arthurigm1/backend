@@ -8,10 +8,9 @@ import routes from "./rotas";
 import { errorHandler } from "./middleware/erromiddleware";
 const app = express();
 app.use(
-  cors()
-  //     {
-  //     origin: "frontend.url", // ou vazio
-  // }
+  cors({
+    origin: "https://incomparable-snickerdoodle-0fe771.netlify.app", // domínio do front
+  })
 );
 
 app.use(morgan("tiny"));
