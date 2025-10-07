@@ -4,11 +4,11 @@ import { SchedulerService } from "./src/service/Scheduler/SchedulerService";
 
 dotenv.config();
 
-const port: number = parseInt(`${process.env.PORT} || 3010`);
+const port: number = parseInt(process.env.PORT || "3010");
 const schedulerService = new SchedulerService();
 
-app.listen(3010, () => {
-  console.log("Servidor Rodando na porta 3010");
+app.listen(port, "0.0.0.0", () => {
+  console.log(`Servidor Rodando na porta ${port}`);
   console.log("Inicializando sistema de notificações...");
   
   // Iniciar o agendamento automático de notificações
