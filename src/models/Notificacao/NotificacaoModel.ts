@@ -190,4 +190,100 @@ export class NotificacaoModel {
       },
     });
   }
+
+  // Métodos específicos para o sistema de notificações baseado em faturas e contratos
+
+  async buscarFaturasVencidas(): Promise<any[]> {
+    const hoje = new Date();
+    return await prismaClient.fatura.findMany({
+      where: {
+        status: 'PENDENTE',
+        dataVencimento: {
+          lt: hoje
+        }
+      },
+      include: {
+        contrato: {
+          include: {
+            inquilino: true,
+            loja: true
+          }
+        }
+      }
+    });
+  }
+
+  async buscarFaturasProximoVencimento(dataLimite: Date): Promise<any[]> {
+    const hoje = new Date();
+    return await prismaClient.fatura.findMany({
+      where: {
+        status: 'PENDENTE',
+        dataVencimento: {
+          gte: hoje,
+          lte: dataLimite
+        }
+      },
+      include: {
+        contrato: {
+          include: {
+            inquilino: true,
+            loja: true
+          }
+        }
+      }
+    });
+  }
+
+  async buscarContratosProximoVencimento(dataLimite: Date): Promise<any[]> {
+    const hoje = new Date();
+    return await prismaClient.contrato.findMany({
+      where: {
+        status: 'ATIVO',
+        dataFim: {
+          gte: hoje,
+          lte: dataLimite
+        }
+      },
+      include: {
+        inquilino: true,
+        loja: true
+      }
+    });
+  }
+
+  async buscarFaturaPorId(faturaId: string): Promise<any | null> {
+    return await prismaClient.fatura.findUnique({
+      where: { id: faturaId },
+      include: {
+        contrato: {
+          include: {
+            inquilino: true,
+            loja: true
+          }
+        }
+      }
+    });
+  }
+
+  async verificarNotificacaoExistente(usuarioId: string, tipo: TipoNotificacao, referencia: string): Promise<boolean> {
+    const hoje = new Date();
+    const inicioHoje = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
+    
+    const notificacao = await prismaClient.notificacao.findFirst({
+      where: {
+        usuarioId,
+        tipo,
+        mensagem: {
+          contains: referencia.includes('fatura-') ? 
+            referencia.replace('fatura-', '').replace('fatura-proximo-', '') : 
+            referencia.replace('contrato-', '')
+        },
+        enviadaEm: {
+          gte: inicioHoje
+        }
+      }
+    });
+
+    return !!notificacao;
+  }
 }

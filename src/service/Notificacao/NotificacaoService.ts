@@ -76,24 +76,119 @@ export class NotificacaoService {
     return await this.notificacaoModel.contarNotificacoesNaoLidas(usuarioId);
   }
 
-  // Método principal para processar notificações de inadimplência
-  // REMOVIDO: Funcionalidade de pagamentos foi removida do sistema
+  // Método principal para processar notificações de inadimplência baseado em faturas
   async processarNotificacoesInadimplencia(): Promise<{
-    pagamentosVencidos: number;
-    pagamentosProximoVencimento: number;
+    faturasVencidas: number;
+    faturasProximoVencimento: number;
+    contratosProximoVencimento: number;
     notificacoesEnviadas: number;
   }> {
-    // Retorna valores zerados já que não há mais sistema de pagamentos
-    return {
-      pagamentosVencidos: 0,
-      pagamentosProximoVencimento: 0,
-      notificacoesEnviadas: 0,
-    };
+    const hoje = new Date();
+    const em7Dias = new Date();
+    em7Dias.setDate(hoje.getDate() + 7);
+    
+    const em30Dias = new Date();
+    em30Dias.setDate(hoje.getDate() + 30);
+
+    let notificacoesEnviadas = 0;
+
+    try {
+      // 1. Buscar faturas vencidas (status PENDENTE e data de vencimento passou)
+      const faturasVencidas = await this.notificacaoModel.buscarFaturasVencidas();
+      
+      // 2. Buscar faturas próximas ao vencimento (próximos 7 dias)
+      const faturasProximoVencimento = await this.notificacaoModel.buscarFaturasProximoVencimento(em7Dias);
+      
+      // 3. Buscar contratos próximos ao vencimento (próximos 30 dias)
+      const contratosProximoVencimento = await this.notificacaoModel.buscarContratosProximoVencimento(em30Dias);
+
+      // 4. Processar notificações para faturas vencidas
+      for (const fatura of faturasVencidas) {
+        const jaNotificado = await this.notificacaoModel.verificarNotificacaoExistente(
+          fatura.contrato.inquilinoId,
+          TipoNotificacao.PAGAMENTO_VENCIDO,
+          `fatura-${fatura.id}`
+        );
+
+        if (!jaNotificado) {
+          await this.notificacaoModel.criarNotificacao({
+            usuarioId: fatura.contrato.inquilinoId,
+            mensagem: `Sua fatura referente ao mês ${fatura.mesReferencia}/${fatura.anoReferencia} da loja ${fatura.contrato.loja.nome} está vencida. Valor: R$ ${fatura.valorAluguel.toFixed(2)}`,
+            tipo: TipoNotificacao.PAGAMENTO_VENCIDO
+          });
+          notificacoesEnviadas++;
+        }
+      }
+
+      // 5. Processar notificações para faturas próximas ao vencimento
+      for (const fatura of faturasProximoVencimento) {
+        const jaNotificado = await this.notificacaoModel.verificarNotificacaoExistente(
+          fatura.contrato.inquilinoId,
+          TipoNotificacao.PAGAMENTO_PROXIMO_VENCIMENTO,
+          `fatura-proximo-${fatura.id}`
+        );
+
+        if (!jaNotificado) {
+          const diasParaVencimento = Math.ceil((fatura.dataVencimento.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
+          await this.notificacaoModel.criarNotificacao({
+            usuarioId: fatura.contrato.inquilinoId,
+            mensagem: `Sua fatura referente ao mês ${fatura.mesReferencia}/${fatura.anoReferencia} da loja ${fatura.contrato.loja.nome} vence em ${diasParaVencimento} dias. Valor: R$ ${fatura.valorAluguel.toFixed(2)}`,
+            tipo: TipoNotificacao.PAGAMENTO_PROXIMO_VENCIMENTO
+          });
+          notificacoesEnviadas++;
+        }
+      }
+
+      // 6. Processar notificações para contratos próximos ao vencimento
+      for (const contrato of contratosProximoVencimento) {
+        const jaNotificado = await this.notificacaoModel.verificarNotificacaoExistente(
+          contrato.inquilinoId,
+          TipoNotificacao.CONTRATO_VENCIMENTO,
+          `contrato-${contrato.id}`
+        );
+
+        if (!jaNotificado) {
+          const diasParaVencimento = Math.ceil((contrato.dataFim.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
+          await this.notificacaoModel.criarNotificacao({
+            usuarioId: contrato.inquilinoId,
+            mensagem: `Seu contrato da loja ${contrato.loja.nome} vence em ${diasParaVencimento} dias. Entre em contato para renovação.`,
+            tipo: TipoNotificacao.CONTRATO_VENCIMENTO
+          });
+          notificacoesEnviadas++;
+        }
+      }
+
+      return {
+        faturasVencidas: faturasVencidas.length,
+        faturasProximoVencimento: faturasProximoVencimento.length,
+        contratosProximoVencimento: contratosProximoVencimento.length,
+        notificacoesEnviadas,
+      };
+
+    } catch (error) {
+      console.error('Erro ao processar notificações de inadimplência:', error);
+      throw new ApiError(500, "Erro interno ao processar notificações");
+    }
   }
 
-  // REMOVIDO: Funcionalidade de pagamentos foi removida do sistema
-  async notificarPagamentoRealizado(pagamentoId: string): Promise<void> {
-    throw new ApiError(404, "Funcionalidade de pagamentos foi removida do sistema");
+  // Notificar quando uma fatura for paga
+  async notificarFaturaPaga(faturaId: string): Promise<void> {
+    try {
+      const fatura = await this.notificacaoModel.buscarFaturaPorId(faturaId);
+      if (!fatura) {
+        throw new ApiError(404, "Fatura não encontrada");
+      }
+
+      await this.notificacaoModel.criarNotificacao({
+        usuarioId: fatura.contrato.inquilinoId,
+        mensagem: `Pagamento confirmado! Sua fatura referente ao mês ${fatura.mesReferencia}/${fatura.anoReferencia} da loja ${fatura.contrato.loja.nome} foi quitada.`,
+        tipo: TipoNotificacao.PAGAMENTO_REALIZADO
+      });
+
+    } catch (error) {
+      console.error('Erro ao notificar pagamento realizado:', error);
+      throw error;
+    }
   }
 
   async listarNotificacoesPorEmpresa(empresaId: string, usuarioSolicitante: string, filtro?: IFiltroNotificacoes) {
@@ -128,19 +223,28 @@ export class NotificacaoService {
     const hoje = new Date();
     const inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
     
-    const [notificacoesTotal, notificacoesMes] = await Promise.all([
+    const [notificacoesTotal, notificacoesMes, faturasVencidas, faturasProximoVencimento, contratosProximoVencimento] = await Promise.all([
       this.notificacaoModel.listarNotificacoesPorEmpresa(empresaId),
       this.notificacaoModel.listarNotificacoesComFiltro({
         dataInicio: inicioMes,
         dataFim: hoje,
-      })
+      }),
+      this.notificacaoModel.buscarFaturasVencidas(),
+      this.notificacaoModel.buscarFaturasProximoVencimento(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)),
+      this.notificacaoModel.buscarContratosProximoVencimento(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000))
     ]);
+
+    // Filtrar faturas e contratos da empresa específica
+    const faturasVencidasEmpresa = faturasVencidas.filter(f => f.contrato.inquilino.empresaId === empresaId);
+    const faturasProximoVencimentoEmpresa = faturasProximoVencimento.filter(f => f.contrato.inquilino.empresaId === empresaId);
+    const contratosProximoVencimentoEmpresa = contratosProximoVencimento.filter(c => c.inquilino.empresaId === empresaId);
 
     return {
       totalNotificacoes: notificacoesTotal.length,
       notificacoesMesAtual: notificacoesMes.length,
-      pagamentosVencidos: 0, // Removido: sistema de pagamentos foi removido
-      pagamentosProximoVencimento: 0, // Removido: sistema de pagamentos foi removido
+      faturasVencidas: faturasVencidasEmpresa.length,
+      faturasProximoVencimento: faturasProximoVencimentoEmpresa.length,
+      contratosProximoVencimento: contratosProximoVencimentoEmpresa.length,
       notificacoesPorTipo: {
         pagamentoVencido: notificacoesTotal.filter(n => n.tipo === TipoNotificacao.PAGAMENTO_VENCIDO).length,
         pagamentoProximoVencimento: notificacoesTotal.filter(n => n.tipo === TipoNotificacao.PAGAMENTO_PROXIMO_VENCIMENTO).length,
