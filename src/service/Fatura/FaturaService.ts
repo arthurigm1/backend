@@ -1,5 +1,12 @@
 import prismaClient from "../../prisma/PrismaClient";
 import { StatusFatura, StatusContrato } from "../../generated/prisma";
+import { EFIService } from "../../services/EFIService";
+import { 
+  IEFIOneStepCharge, 
+  IEFICustomer, 
+  IEFICustomerAddress 
+} from "../../interface/EFI/EFI";
+
 
 export interface IGerarFaturasMensais {
   mesReferencia: number;
@@ -16,6 +23,11 @@ export interface IFaturaGerada {
 }
 
 export class FaturaService {
+  private efiService: EFIService;
+
+  constructor() {
+    this.efiService = new EFIService();
+  }
   
   /**
    * Gera faturas mensais para todos os contratos ativos
@@ -77,6 +89,83 @@ export class FaturaService {
           status: StatusFatura.PENDENTE
         }
       });
+
+      // Criar cobrança EFI one-step para a fatura
+      try {
+        // Preparar dados do cliente para EFI
+        const customerAddress: IEFICustomerAddress = {
+          street: "Rua Exemplo", // Você pode buscar do perfil do inquilino ou usar padrão
+          number: "123",
+          neighborhood: "Centro",
+          zipcode: "35400000",
+          city: "Ouro Preto",
+          state: "MG"
+        };
+
+        const customer: IEFICustomer = {
+          name: contrato.inquilino.nome,
+          cpf: contrato.inquilino.cpf || "12345678910",
+          email: contrato.inquilino.email,
+          phone_number: contrato.inquilino.telefone || "31999999999",
+          address: customerAddress
+        };
+
+        // Preparar cobrança one-step
+        const oneStepCharge: IEFIOneStepCharge = {
+          items: [
+            {
+              name: `Aluguel ${contrato.loja.nome} - ${mesReferencia}/${anoReferencia}`,
+              value: Math.round(valorFinal * 100), // Converter para centavos
+              amount: 1
+            }
+          ],
+          payment: {
+            banking_billet: {
+              customer,
+              expire_at: dataVencimento.toISOString().split('T')[0], // Formato YYYY-MM-DD
+              configurations: {
+                fine: 200, // 2% de multa (em centavos)
+                interest: 33 // 0.33% de juros ao dia (em centavos)
+              },
+              message: `Aluguel referente ao mês ${mesReferencia}/${anoReferencia}\nLoja: ${contrato.loja.nome}\nInquilino: ${contrato.inquilino.nome}\nContrato: ${contrato.id}`
+            }
+          }
+        };
+
+        const cobrancaEFI = await this.efiService.criarCobrancaOneStep(oneStepCharge);
+
+        if (cobrancaEFI && cobrancaEFI.data) {
+          // Criar registro na tabela EFICobranca
+          const efiCobranca = await prismaClient.eFICobranca.create({
+            data: {
+              chargeId: cobrancaEFI.data.charge_id,
+              barcode: cobrancaEFI.data.barcode,
+              pixQrcode: cobrancaEFI.data.pix.qrcode,
+              pixQrcodeImage: cobrancaEFI.data.pix.qrcode_image,
+              link: cobrancaEFI.data.link,
+              billetLink: cobrancaEFI.data.billet_link,
+              pdfLink: cobrancaEFI.data.pdf.charge,
+              expireAt: new Date(cobrancaEFI.data.expire_at),
+              status: cobrancaEFI.data.status,
+              total: cobrancaEFI.data.total,
+              payment: cobrancaEFI.data.payment
+            }
+          });
+
+          // Atualizar fatura com o ID da EFICobranca
+          await prismaClient.fatura.update({
+            where: { id: novaFatura.id },
+            data: {
+              efiCobrancaId: efiCobranca.id
+            }
+          });
+
+          console.log(`Cobrança EFI one-step criada para fatura ${novaFatura.id}: ${cobrancaEFI.data.charge_id}`);
+        }
+      } catch (error) {
+        console.error(`Erro ao criar cobrança EFI one-step para fatura ${novaFatura.id}:`, error);
+        throw Error("ERRO COBRANCA")
+      }
 
       faturasGeradas.push({
         id: novaFatura.id,
@@ -151,8 +240,7 @@ export class FaturaService {
               loja: true,
               inquilino: true
             }
-          },
-          pagamentos: true
+          }
         },
         orderBy: [
           { anoReferencia: 'desc' },
@@ -195,8 +283,7 @@ export class FaturaService {
             loja: true,
             inquilino: true
           }
-        },
-        pagamentos: true
+        }
       }
     });
   }

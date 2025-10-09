@@ -8,6 +8,7 @@ export interface ICriarFatura {
   valorReajustado?: number;
   dataVencimento: Date;
   observacoes?: string;
+  // Campos EFI removidos - agora estão na tabela EFICobranca
 }
 
 export interface IFiltrosFatura {
@@ -31,6 +32,7 @@ export interface IFaturaCompleta {
   dataGeracao: Date;
   status: StatusFatura;
   observacoes?: string;
+  // Campos EFI removidos - agora estão na tabela EFICobranca
   contrato: {
     id: string;
     valorAluguel: number;
@@ -82,4 +84,5 @@ export interface IFaturaGeradaResponse {
   dataVencimento: Date;
   mesReferencia: number;
   anoReferencia: number;
+  // Campos EFI removidos - agora estão na tabela EFICobranca
 }

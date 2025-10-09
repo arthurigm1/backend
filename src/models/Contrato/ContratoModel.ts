@@ -7,45 +7,150 @@ import {
   IListarContratosResponse 
 } from "../../interface/Contrato/Contrato";
 import { PrismaClient, StatusContrato, StatusFatura } from "../../generated/prisma";
+import { EFIService } from "../../services/EFIService";
+import { 
+  IEFIOneStepCharge, 
+  IEFICustomer, 
+  IEFICustomerAddress 
+} from "../../interface/EFI/EFI";
 
 const prismaClient = new PrismaClient();
 
 export class ContratoModel {
+  private efiService: EFIService;
+
+  constructor() {
+    this.efiService = new EFIService();
+  }
   async criarContrato(dados: ICriarContrato): Promise<IContrato> {
-    const contrato = await prismaClient.contrato.create({
-      data: {
-        lojaId: dados.lojaId,
-        inquilinoId: dados.inquilinoId,
-        valorAluguel: dados.valorAluguel,
-        dataInicio: dados.dataInicio,
-        dataFim: dados.dataFim,
-        dataVencimento: dados.dataVencimento,
-        reajusteAnual: dados.reajusteAnual || false,
-        percentualReajuste: dados.percentualReajuste,
-        clausulas: dados.clausulas,
-        observacoes: dados.observacoes,
-      },
+    // Primeiro, buscar dados necessários para criar a cobrança EFI
+    const loja = await prismaClient.loja.findUnique({
+      where: { id: dados.lojaId }
     });
 
-    // Criar fatura para o próximo mês
+    const inquilino = await prismaClient.usuario.findUnique({
+      where: { id: dados.inquilinoId }
+    });
+
+    if (!loja) {
+      throw new Error("Loja não encontrada");
+    }
+
+    if (!inquilino) {
+      throw new Error("Inquilino não encontrado");
+    }
+
+    // Preparar dados para a fatura
     const proximoMes = new Date();
     proximoMes.setMonth(proximoMes.getMonth() + 1);
     
     // Data de vencimento baseada no dia especificado no contrato
     const dataVencimentoFatura = new Date(proximoMes.getFullYear(), proximoMes.getMonth(), dados.dataVencimento);
 
-    await prismaClient.fatura.create({
-      data: {
-        contratoId: contrato.id,
-        mesReferencia: proximoMes.getMonth() + 1,
-        anoReferencia: proximoMes.getFullYear(),
-        valorAluguel: dados.valorAluguel,
-        dataVencimento: dataVencimentoFatura,
-        status: StatusFatura.PENDENTE,
-      }
-    });
+    // Preparar dados do cliente para EFI
+    const customerAddress: IEFICustomerAddress = {
+      street: "Rua Exemplo", // Você pode buscar do perfil do inquilino ou usar padrão
+      number: "123",
+      neighborhood: "Centro",
+      zipcode: "35400000",
+      city: "Ouro Preto",
+      state: "MG"
+    };
 
-    return contrato;
+    const customer: IEFICustomer = {
+      name: inquilino.nome,
+      cpf: inquilino.cpf || "54568878004",
+      email: inquilino.email,
+      phone_number: inquilino.telefone || "31999999999",
+      address: customerAddress
+    };
+
+    // Preparar cobrança one-step
+    const oneStepCharge: IEFIOneStepCharge = {
+      items: [
+        {
+          name: `Aluguel ${loja.nome} - ${proximoMes.getMonth() + 1}/${proximoMes.getFullYear()}`,
+          value: Math.round(dados.valorAluguel * 100), // Converter para centavos
+          amount: 1
+        }
+      ],
+      payment: {
+        banking_billet: {
+          customer,
+          expire_at: dataVencimentoFatura.toISOString().split('T')[0], // Formato YYYY-MM-DD
+          configurations: {
+            fine: 200, // 2% de multa (em centavos)
+            interest: 33 // 0.33% de juros ao dia (em centavos)
+          },
+          message: `Aluguel referente ao mês ${proximoMes.getMonth() + 1}/${proximoMes.getFullYear()}\nLoja: ${loja.nome}\nInquilino: ${inquilino.nome}`
+        }
+      }
+    };
+
+    // Tentar criar a cobrança EFI primeiro
+    const cobrancaEFI = await this.efiService.criarCobrancaOneStep(oneStepCharge);
+
+    if (!cobrancaEFI || !cobrancaEFI.data) {
+      throw new Error("Falha ao criar cobrança EFI. Contrato não foi criado.");
+    }
+
+    // Se a cobrança EFI foi criada com sucesso, criar contrato e fatura em transação
+    return await prismaClient.$transaction(async (tx) => {
+      // Criar contrato
+      const contrato = await tx.contrato.create({
+        data: {
+          lojaId: dados.lojaId,
+          inquilinoId: dados.inquilinoId,
+          valorAluguel: dados.valorAluguel,
+          dataInicio: dados.dataInicio,
+          dataFim: dados.dataFim,
+          dataVencimento: dados.dataVencimento,
+          reajusteAnual: dados.reajusteAnual || false,
+          percentualReajuste: dados.percentualReajuste,
+          clausulas: dados.clausulas,
+          observacoes: dados.observacoes,
+        },
+      });
+
+      // Criar fatura para o próximo mês
+      const novaFatura = await tx.fatura.create({
+        data: {
+          contratoId: contrato.id,
+          mesReferencia: proximoMes.getMonth() + 1,
+          anoReferencia: proximoMes.getFullYear(),
+          valorAluguel: dados.valorAluguel,
+          dataVencimento: dataVencimentoFatura,
+          status: StatusFatura.PENDENTE,
+        }
+      });
+
+      // Criar registro na tabela EFICobranca
+      const efiCobranca = await tx.eFICobranca.create({
+        data: {
+          chargeId: cobrancaEFI.data.charge_id,
+          barcode: cobrancaEFI.data.barcode,
+          pixQrcode: cobrancaEFI.data.pix.qrcode,
+          pixQrcodeImage: cobrancaEFI.data.pix.qrcode_image,
+          link: cobrancaEFI.data.link,
+          billetLink: cobrancaEFI.data.billet_link,
+          pdfLink: cobrancaEFI.data.pdf.charge,
+          expireAt: new Date(cobrancaEFI.data.expire_at),
+          status: cobrancaEFI.data.status,
+          total: cobrancaEFI.data.total,
+          payment: cobrancaEFI.data.payment
+        }
+      });
+
+      // Atualizar a fatura com o ID da EFICobranca
+      await tx.fatura.update({
+        where: { id: novaFatura.id },
+        data: { efiCobrancaId: efiCobranca.id }
+      });
+
+      console.log(`Contrato, fatura e cobrança EFI criados com sucesso. Contrato: ${contrato.id}, Fatura: ${novaFatura.id}, Cobrança EFI: ${cobrancaEFI.data.charge_id}`);
+
+      return contrato;
+    });
   }
 
   async buscarPorId(id: string): Promise<IContratoComRelacoes | null> {

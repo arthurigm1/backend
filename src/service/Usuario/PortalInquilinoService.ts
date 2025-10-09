@@ -115,6 +115,7 @@ export class PortalInquilinoService {
         mesReferencia: fatura.mesReferencia,
         anoReferencia: fatura.anoReferencia,
         status: fatura.status,
+        efiCobrancaId: fatura.efiCobrancaId,
         diasParaVencimento: diasParaVencimento > 0 ? diasParaVencimento : undefined,
         diasEmAtraso,
         loja: {
@@ -251,4 +252,12 @@ export class PortalInquilinoService {
       }
     });
   }
+
+  async buscarFaturaComEFIPorId(efiCobrancaId: string): Promise<any | null> {
+    const fatura = await prismaClient.eFICobranca.findUnique({
+      where: {
+        id: efiCobrancaId,
+      }})
+      return fatura;
+}
 }

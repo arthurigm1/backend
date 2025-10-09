@@ -1,5 +1,4 @@
 import { NotificacaoModel } from "../../models/Notificacao/NotificacaoModel";
-import { PagamentoModel } from "../../models/Pagamento/PagamentoModel";
 import { UsuarioModel } from "../../models/Usuario/UsuarioModel";
 import { ICriarNotificacao, INotificacao, IFiltroNotificacoes } from "../../interface/Notificacao/Notificacao";
 import { TipoNotificacao } from "../../generated/prisma";
@@ -7,12 +6,10 @@ import { ApiError } from "../../utils/apiError";
 
 export class NotificacaoService {
   private notificacaoModel: NotificacaoModel;
-  private pagamentoModel: PagamentoModel;
   private usuarioModel: UsuarioModel;
 
   constructor() {
     this.notificacaoModel = new NotificacaoModel();
-    this.pagamentoModel = new PagamentoModel();
     this.usuarioModel = new UsuarioModel();
   }
 
@@ -80,73 +77,23 @@ export class NotificacaoService {
   }
 
   // Método principal para processar notificações de inadimplência
+  // REMOVIDO: Funcionalidade de pagamentos foi removida do sistema
   async processarNotificacoesInadimplencia(): Promise<{
     pagamentosVencidos: number;
     pagamentosProximoVencimento: number;
     notificacoesEnviadas: number;
   }> {
-    // Atualizar status dos pagamentos vencidos
-    const pagamentosAtualizados = await this.pagamentoModel.atualizarStatusPagamentosVencidos();
-
-    // Buscar pagamentos vencidos
-    const pagamentosVencidos = await this.pagamentoModel.listarPagamentosVencidos();
-    
-    // Buscar pagamentos próximos ao vencimento (7 dias)
-    const pagamentosProximoVencimento = await this.pagamentoModel.listarPagamentosProximosVencimento(7);
-
-    const notificacoesParaCriar: ICriarNotificacao[] = [];
-
-    // Criar notificações para pagamentos vencidos
-    for (const pagamento of pagamentosVencidos) {
-      const diasAtraso = Math.floor((new Date().getTime() - pagamento.dataVenc.getTime()) / (1000 * 60 * 60 * 24));
-      
-      const mensagem = `Pagamento em atraso há ${diasAtraso} dia(s). Loja: ${pagamento.contrato.loja.nome} (${pagamento.contrato.loja.numero}). Valor: R$ ${pagamento.valor.toFixed(2)}. Vencimento: ${pagamento.dataVenc.toLocaleDateString('pt-BR')}.`;
-      
-      notificacoesParaCriar.push({
-        usuarioId: pagamento.usuarioId,
-        mensagem,
-        tipo: TipoNotificacao.PAGAMENTO_VENCIDO,
-      });
-    }
-
-    // Criar notificações para pagamentos próximos ao vencimento
-    for (const pagamento of pagamentosProximoVencimento) {
-      const diasRestantes = Math.ceil((pagamento.dataVenc.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
-      
-      const mensagem = `Pagamento vence em ${diasRestantes} dia(s). Loja: ${pagamento.contrato.loja.nome} (${pagamento.contrato.loja.numero}). Valor: R$ ${pagamento.valor.toFixed(2)}. Vencimento: ${pagamento.dataVenc.toLocaleDateString('pt-BR')}.`;
-      
-      notificacoesParaCriar.push({
-        usuarioId: pagamento.usuarioId,
-        mensagem,
-        tipo: TipoNotificacao.PAGAMENTO_PROXIMO_VENCIMENTO,
-      });
-    }
-
-    // Criar todas as notificações em lote
-    const notificacoesEnviadas = notificacoesParaCriar.length > 0 
-      ? await this.notificacaoModel.criarNotificacaoEmLote(notificacoesParaCriar)
-      : 0;
-
+    // Retorna valores zerados já que não há mais sistema de pagamentos
     return {
-      pagamentosVencidos: pagamentosVencidos.length,
-      pagamentosProximoVencimento: pagamentosProximoVencimento.length,
-      notificacoesEnviadas,
+      pagamentosVencidos: 0,
+      pagamentosProximoVencimento: 0,
+      notificacoesEnviadas: 0,
     };
   }
 
+  // REMOVIDO: Funcionalidade de pagamentos foi removida do sistema
   async notificarPagamentoRealizado(pagamentoId: string): Promise<void> {
-    const pagamento = await this.pagamentoModel.buscarPorIdComDetalhes(pagamentoId);
-    if (!pagamento) {
-      throw new ApiError(404, "Pagamento não encontrado");
-    }
-
-    const mensagem = `Pagamento confirmado! Loja: ${pagamento.contrato.loja.nome} (${pagamento.contrato.loja.numero}). Valor: R$ ${pagamento.valor.toFixed(2)}. Data: ${new Date().toLocaleDateString('pt-BR')}.`;
-    
-    await this.notificacaoModel.criarNotificacao({
-      usuarioId: pagamento.usuarioId,
-      mensagem,
-      tipo: TipoNotificacao.PAGAMENTO_REALIZADO,
-    });
+    throw new ApiError(404, "Funcionalidade de pagamentos foi removida do sistema");
   }
 
   async listarNotificacoesPorEmpresa(empresaId: string, usuarioSolicitante: string, filtro?: IFiltroNotificacoes) {
@@ -181,21 +128,19 @@ export class NotificacaoService {
     const hoje = new Date();
     const inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
     
-    const [notificacoesTotal, notificacoesMes, pagamentosVencidos, pagamentosProximoVencimento] = await Promise.all([
+    const [notificacoesTotal, notificacoesMes] = await Promise.all([
       this.notificacaoModel.listarNotificacoesPorEmpresa(empresaId),
       this.notificacaoModel.listarNotificacoesComFiltro({
         dataInicio: inicioMes,
         dataFim: hoje,
-      }),
-      this.pagamentoModel.listarPagamentosVencidos(),
-      this.pagamentoModel.listarPagamentosProximosVencimento(7),
+      })
     ]);
 
     return {
       totalNotificacoes: notificacoesTotal.length,
       notificacoesMesAtual: notificacoesMes.length,
-      pagamentosVencidos: pagamentosVencidos.length,
-      pagamentosProximoVencimento: pagamentosProximoVencimento.length,
+      pagamentosVencidos: 0, // Removido: sistema de pagamentos foi removido
+      pagamentosProximoVencimento: 0, // Removido: sistema de pagamentos foi removido
       notificacoesPorTipo: {
         pagamentoVencido: notificacoesTotal.filter(n => n.tipo === TipoNotificacao.PAGAMENTO_VENCIDO).length,
         pagamentoProximoVencimento: notificacoesTotal.filter(n => n.tipo === TipoNotificacao.PAGAMENTO_PROXIMO_VENCIMENTO).length,

@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
   output   = "../src/generated/prisma"
@@ -16,115 +10,117 @@ datasource db {
 
 
 model Empresa {
-  id        String   @id @default(cuid())
-  nome      String
-  cnpj      String   @unique
-  criadoEm  DateTime @default(now())
-  usuarios  Usuario[]
-  lojas     Loja[]
+  id       String    @id @default(cuid())
+  nome     String
+  cnpj     String    @unique
+  criadoEm DateTime  @default(now())
+  lojas    Loja[]
+  usuarios Usuario[]
 }
 
 model Usuario {
-  id                     String        @id @default(uuid())
-  nome                   String
-  email                  String        @unique
-  senha                  String
-  cpf                    String?       @unique
-  telefone               String?
-  tipo                   TipoUsuario
-  empresaId              String
-  resetPasswordToken     String?
-  resetPasswordExpires   DateTime?
-  empresa                Empresa       @relation(fields: [empresaId], references: [id])
-  lojas                  Loja[]        // Lojas onde o usuário é inquilino
-  contratos              Contrato[]
-  pagamentos             Pagamento[]
-  notificacoes           Notificacao[]
-  criadoEm               DateTime      @default(now())
+  id                   String        @id @default(uuid())
+  nome                 String
+  email                String        @unique
+  senha                String
+  cpf                  String?       @unique
+  telefone             String?
+  tipo                 TipoUsuario
+  empresaId            String
+  criadoEm             DateTime      @default(now())
+  resetPasswordExpires DateTime?
+  resetPasswordToken   String?
+  contratos            Contrato[]
+  lojas                Loja[]
+  notificacoes         Notificacao[]
+  empresa              Empresa       @relation(fields: [empresaId], references: [id])
 }
 
 model Loja {
-  id           String      @id @default(uuid())
-  nome         String
-  numero       String
-  localizacao  String
-  status       StatusLoja
-  empresaId    String
-  usuarioId    String?     // ID do inquilino vinculado diretamente
-  empresa      Empresa     @relation(fields: [empresaId], references: [id])
-  usuario      Usuario?    @relation(fields: [usuarioId], references: [id])
-  contratos    Contrato[]
-  criadoEm     DateTime    @default(now())
+  id          String     @id @default(uuid())
+  nome        String
+  numero      String
+  localizacao String
+  status      StatusLoja
+  empresaId   String
+  usuarioId   String?
+  criadoEm    DateTime   @default(now())
+  contratos   Contrato[]
+  usuario     Usuario?   @relation(fields: [usuarioId], references: [id])
+  empresa     Empresa    @relation(fields: [empresaId], references: [id])
 }
 
 model Contrato {
-  id                  String        @id @default(uuid())
-  lojaId              String
-  inquilinoId         String
-  valorAluguel        Float
-  dataInicio          DateTime
-  dataFim             DateTime
-  dataVencimento      Int           @default(5) // Dia do mês para vencimento das faturas (1-31)
-  reajusteAnual       Boolean       @default(false)
-  percentualReajuste  Float?
-  clausulas           String?
-  observacoes         String?
-  status              StatusContrato @default(ATIVO)
-  ativo               Boolean       @default(true)
-  loja                Loja          @relation(fields: [lojaId], references: [id])
-  inquilino           Usuario       @relation(fields: [inquilinoId], references: [id])
-  pagamentos          Pagamento[]
-  faturas             Fatura[]      // Relacionamento com faturas
-  criadoEm            DateTime      @default(now())
-  atualizadoEm        DateTime      @updatedAt
+  id                 String         @id @default(uuid())
+  lojaId             String
+  inquilinoId        String
+  valorAluguel       Float
+  dataInicio         DateTime
+  dataFim            DateTime
+  dataVencimento     Int            @default(5)
+  reajusteAnual      Boolean        @default(false)
+  percentualReajuste Float?
+  clausulas          String?
+  observacoes        String?
+  status             StatusContrato @default(ATIVO)
+  ativo              Boolean        @default(true)
+  criadoEm           DateTime       @default(now())
+  atualizadoEm       DateTime       @updatedAt
+  inquilino          Usuario        @relation(fields: [inquilinoId], references: [id])
+  loja               Loja           @relation(fields: [lojaId], references: [id])
+  faturas            Fatura[]
 }
 
 model Fatura {
-  id                String        @id @default(uuid())
-  contratoId        String
-  mesReferencia     Int           // Mês (1-12)
-  anoReferencia     Int           // Ano
-  valorAluguel      Float
-  dataVencimento    DateTime
-  dataGeracao       DateTime      @default(now())
-  status            StatusFatura  @default(PENDENTE)
-  contrato          Contrato      @relation(fields: [contratoId], references: [id])
-  pagamentos        Pagamento[]
-  criadoEm          DateTime      @default(now())
-  atualizadoEm      DateTime      @updatedAt
+  id             String       @id @default(uuid())
+  contratoId     String
+  mesReferencia  Int
+  anoReferencia  Int
+  valorAluguel   Float
+  dataVencimento DateTime
+  dataGeracao    DateTime     @default(now())
+  status         StatusFatura @default(PENDENTE)
+  efiCobrancaId  String?      @unique
+  criadoEm       DateTime     @default(now())
+  atualizadoEm   DateTime     @updatedAt
+  contrato       Contrato     @relation(fields: [contratoId], references: [id])
+  efiCobranca    EFICobranca? @relation(fields: [efiCobrancaId], references: [id])
 
   @@unique([contratoId, mesReferencia, anoReferencia])
 }
 
-model Pagamento {
-  id           String    @id @default(uuid())
-  contratoId   String
-  faturaId     String?   // Relacionamento opcional com fatura
-  usuarioId    String
-  valor        Float
-  dataVenc     DateTime
-  dataPag      DateTime?
-  status       StatusPagamento
-  contrato     Contrato  @relation(fields: [contratoId], references: [id])
-  fatura       Fatura?   @relation(fields: [faturaId], references: [id])
-  usuario      Usuario   @relation(fields: [usuarioId], references: [id])
-  criadoEm     DateTime  @default(now())
+model Notificacao {
+  id        String          @id @default(uuid())
+  usuarioId String
+  mensagem  String
+  tipo      TipoNotificacao @default(GERAL)
+  lida      Boolean         @default(false)
+  enviadaEm DateTime        @default(now())
+  usuario   Usuario         @relation(fields: [usuarioId], references: [id])
 }
 
-model Notificacao {
-  id          String            @id @default(uuid())
-  usuarioId   String
-  mensagem    String
-  tipo        TipoNotificacao   @default(GERAL)
-  lida        Boolean           @default(false)
-  enviadaEm   DateTime          @default(now())
-  usuario     Usuario           @relation(fields: [usuarioId], references: [id])
+model EFICobranca {
+  id             String    @id @default(uuid())
+  chargeId       Int?
+  barcode        String?
+  pixQrcode      String?
+  pixQrcodeImage String?
+  link           String?
+  billetLink     String?
+  pdfLink        String?
+  expireAt       DateTime?
+  status         String?
+  total          Int?
+  payment        String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  fatura         Fatura?
 }
 
 enum TipoUsuario {
-  ADMIN_EMPRESA    // Usuário principal da empresa que pode criar outros usuários
-  FUNCIONARIO      // Funcionário da empresa
-  INQUILINO        // Inquilino (pode ser criado por usuários da empresa)
+  ADMIN_EMPRESA
+  FUNCIONARIO
+  INQUILINO
   VISITANTE
 }
 
@@ -132,13 +128,6 @@ enum StatusLoja {
   VAGA
   OCUPADA
   INATIVA
-}
-
-enum StatusPagamento {
-  PENDENTE
-  PAGO
-  ATRASADO
-  CANCELADO
 }
 
 enum TipoNotificacao {
@@ -162,4 +151,3 @@ enum StatusFatura {
   VENCIDA
   CANCELADA
 }
-

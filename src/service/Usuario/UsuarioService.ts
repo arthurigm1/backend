@@ -32,7 +32,7 @@ export class UsuarioService {
       id: usuario.id,
       email: usuario.email,
       empresaId: usuario.empresaId,
-      tipo: "VISITANTE"
+      tipo: "ADMIN_EMPRESA"
     });
     
     return { usuario, empresa, token };

@@ -135,6 +135,51 @@ export class PortalInquilinoController {
     }
   }
 
+
+
+  /**
+   * Busca uma fatura específica com dados EFI completos para pagamento
+   */
+  async buscarFaturaComEFIPorId(req: Request, res: Response): Promise<void> {
+    try {
+      const inquilinoId = req.user?.id;
+      const { efiCobrancaId } = req.params;
+
+      if (!inquilinoId) {
+        throw new ApiError(401, "ID do inquilino não encontrado");
+      }
+
+      if (!efiCobrancaId) {
+        throw new ApiError(400, "ID da cobrança EFI é obrigatório");
+      }
+
+      const fatura = await this.portalInquilinoService.buscarFaturaComEFIPorId(efiCobrancaId);
+
+      if (!fatura) {
+        throw new ApiError(404, "Fatura não encontrada ou não pertence ao inquilino");
+      }
+
+      res.status(200).json({
+        success: true,
+        message: "Fatura com dados EFI obtida com sucesso",
+        data: fatura
+      });
+    } catch (error) {
+      if (error instanceof ApiError) {
+        res.status(error.statusCode).json({
+          success: false,
+          message: error.message
+        });
+      } else {
+        console.error("Erro ao buscar fatura com EFI por ID:", error);
+        res.status(500).json({
+          success: false,
+          message: "Erro interno do servidor"
+        });
+      }
+    }
+  }
+
   /**
    * Busca resumo rápido do inquilino (para dashboard)
    */
