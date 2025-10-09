@@ -14,57 +14,63 @@ export class PortalInquilinoService {
    * Busca todas as informações do portal do inquilino
    */
   async buscarDadosPortalInquilino(inquilinoId: string): Promise<IPortalInquilinoData> {
-    // Buscar dados do inquilino
-    const inquilino = await prismaClient.usuario.findUnique({
-      where: { id: inquilinoId },
-      select: {
-        id: true,
-        nome: true,
-        email: true,
-        telefone: true
-      }
-    });
+    // Executar todas as queries em paralelo para melhor performance
+    const [inquilino, contratos, faturas, notificacoes] = await Promise.all([
+      // Buscar dados do inquilino
+      prismaClient.usuario.findUnique({
+        where: { id: inquilinoId },
+        select: {
+          id: true,
+          nome: true,
+          email: true,
+          telefone: true
+        }
+      }),
+      
+      // Buscar contratos com lojas em uma única query
+      prismaClient.contrato.findMany({
+        where: { 
+          inquilinoId,
+          ativo: true 
+        },
+        include: {
+          loja: true
+        }
+      }),
+      
+      // Buscar faturas com contratos e lojas em uma única query otimizada
+      prismaClient.fatura.findMany({
+        where: {
+          contrato: {
+            inquilinoId
+          }
+        },
+        include: {
+          contrato: {
+            include: {
+              loja: true
+            }
+          }
+        },
+        orderBy: {
+          dataVencimento: 'desc'
+        }
+      }),
+      
+      // Buscar notificações
+      prismaClient.notificacao.findMany({
+        where: { usuarioId: inquilinoId },
+        orderBy: { enviadaEm: 'desc' },
+        take: 20 // Limitar a 20 notificações mais recentes
+      })
+    ]);
 
     if (!inquilino) {
       throw new Error('Inquilino não encontrado');
     }
 
-    // Buscar lojas e contratos do inquilino
-    const lojas = await this.buscarLojasInquilino(inquilinoId);
-    
-    // Buscar faturas do inquilino
-    const faturas = await this.buscarFaturasInquilino(inquilinoId);
-    
-    // Buscar notificações do inquilino
-    const notificacoes = await this.buscarNotificacoes(inquilinoId);
-    
-    // Calcular resumo financeiro
-    const resumoFinanceiro = this.calcularResumoFinanceiro(faturas);
-
-    return {
-      inquilino,
-      lojas,
-      faturas: this.organizarFaturasPorStatus(faturas),
-      notificacoes,
-      resumoFinanceiro
-    };
-  }
-
-  /**
-   * Busca lojas do inquilino com informações do contrato
-   */
-  private async buscarLojasInquilino(inquilinoId: string): Promise<ILojaInquilino[]> {
-    const contratos = await prismaClient.contrato.findMany({
-      where: { 
-        inquilinoId,
-        ativo: true 
-      },
-      include: {
-        loja: true
-      }
-    });
-
-    return contratos.map(contrato => ({
+    // Processar lojas a partir dos contratos
+    const lojas: ILojaInquilino[] = contratos.map(contrato => ({
       id: contrato.loja.id,
       nome: contrato.loja.nome,
       numero: contrato.loja.numero,
@@ -78,33 +84,10 @@ export class PortalInquilinoService {
         status: contrato.status
       }
     }));
-  }
 
-  /**
-   * Busca faturas do inquilino
-   */
-  private async buscarFaturasInquilino(inquilinoId: string): Promise<IFaturaInquilino[]> {
-    const faturas = await prismaClient.fatura.findMany({
-      where: {
-        contrato: {
-          inquilinoId
-        }
-      },
-      include: {
-        contrato: {
-          include: {
-            loja: true
-          }
-        }
-      },
-      orderBy: {
-        dataVencimento: 'desc'
-      }
-    });
-
+    // Processar faturas com cálculos de vencimento
     const hoje = new Date();
-    
-    return faturas.map(fatura => {
+    const faturasProcessadas: IFaturaInquilino[] = faturas.map(fatura => {
       const diasParaVencimento = Math.ceil((fatura.dataVencimento.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
       const diasEmAtraso = diasParaVencimento < 0 ? Math.abs(diasParaVencimento) : undefined;
 
@@ -126,26 +109,28 @@ export class PortalInquilinoService {
         }
       };
     });
-  }
 
-  /**
-   * Busca notificações do inquilino
-   */
-  private async buscarNotificacoes(inquilinoId: string): Promise<INotificacaoInquilino[]> {
-    const notificacoes = await prismaClient.notificacao.findMany({
-      where: { usuarioId: inquilinoId },
-      orderBy: { enviadaEm: 'desc' },
-      take: 20 // Limitar a 20 notificações mais recentes
-    });
-
-    return notificacoes.map(notificacao => ({
+    // Processar notificações
+    const notificacoesProcessadas: INotificacaoInquilino[] = notificacoes.map(notificacao => ({
       id: notificacao.id,
       mensagem: notificacao.mensagem,
       tipo: notificacao.tipo,
       lida: notificacao.lida,
       enviadaEm: notificacao.enviadaEm
     }));
+    
+    // Calcular resumo financeiro
+    const resumoFinanceiro = this.calcularResumoFinanceiro(faturasProcessadas);
+
+    return {
+      inquilino,
+      lojas,
+      faturas: this.organizarFaturasPorStatus(faturasProcessadas),
+      notificacoes: notificacoesProcessadas,
+      resumoFinanceiro
+    };
   }
+
 
   /**
    * Organiza faturas por status

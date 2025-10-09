@@ -4,8 +4,8 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = "postgresql://postgres:RDIYuQCEKRggRxUkFazSoCAvDwdVBkQl@hopper.proxy.rlwy.net:12237/railway"
+  provider = "sqlite"
+  url      = "file:./dev.db"
 }
 
 
