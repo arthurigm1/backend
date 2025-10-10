@@ -20,14 +20,17 @@ export class NotificacaoService {
       throw new ApiError(404, "Usuário não encontrado");
     }
 
-    // Verificar se o usuário solicitante tem permissão (deve ser da mesma empresa ou admin)
-    const usuarioSolic = await this.usuarioModel.buscarPorId(usuarioSolicitante);
-    if (!usuarioSolic) {
-      throw new ApiError(404, "Usuário solicitante não encontrado");
-    }
+    // Se for uma notificação do sistema, pular validação do usuário solicitante
+    if (usuarioSolicitante !== 'SISTEMA') {
+      // Verificar se o usuário solicitante tem permissão (deve ser da mesma empresa ou admin)
+      const usuarioSolic = await this.usuarioModel.buscarPorId(usuarioSolicitante);
+      if (!usuarioSolic) {
+        throw new ApiError(404, "Usuário solicitante não encontrado");
+      }
 
-    if (usuarioSolic.empresaId !== usuario.empresaId && usuarioSolic.tipo !== 'ADMIN_EMPRESA') {
-      throw new ApiError(403, "Sem permissão para criar notificação para este usuário");
+      if (usuarioSolic.empresaId !== usuario.empresaId && usuarioSolic.tipo !== 'ADMIN_EMPRESA') {
+        throw new ApiError(403, "Sem permissão para criar notificação para este usuário");
+      }
     }
 
     return await this.notificacaoModel.criarNotificacao(data);
