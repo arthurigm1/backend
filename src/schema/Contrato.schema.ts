@@ -29,7 +29,6 @@ export const atualizarContratoSchema = z.object({
   clausulas: z.string().max(2000, "Cláusulas não podem exceder 2000 caracteres").optional(),
   observacoes: z.string().max(1000, "Observações não podem exceder 1000 caracteres").optional(),
   status: statusContratoEnum.optional(),
-  ativo: z.boolean().optional(),
 });
 
 export const rescindirContratoSchema = z.object({
@@ -48,7 +47,6 @@ export const renovarContratoSchema = z.object({
 
 export const filtrosContratoSchema = z.object({
   status: statusContratoEnum.optional(),
-  ativo: z.string().transform((str) => str === 'true').optional(),
   lojaId: z.string().optional(),
   inquilinoId: z.string().optional(),
   dataInicioMin: z.string().transform((str) => new Date(str)).optional(),

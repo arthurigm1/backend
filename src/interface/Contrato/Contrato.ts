@@ -26,7 +26,6 @@ export interface IContrato {
   clausulas: string | null;
   observacoes: string | null;
   status: StatusContrato;
-  ativo: boolean;
   criadoEm: Date;
   atualizadoEm: Date;
 }
@@ -40,12 +39,10 @@ export interface IAtualizarContrato {
   clausulas?: string;
   observacoes?: string;
   status?: StatusContrato;
-  ativo?: boolean;
 }
 
 export interface IFiltrosContrato {
   status?: StatusContrato;
-  ativo?: boolean;
   lojaId?: string;
   inquilinoId?: string;
   dataInicioMin?: Date;

@@ -63,7 +63,6 @@ model Contrato {
   clausulas          String?
   observacoes        String?
   status             StatusContrato @default(ATIVO)
-  ativo              Boolean        @default(true)
   criadoEm           DateTime       @default(now())
   atualizadoEm       DateTime       @updatedAt
   inquilino          Usuario        @relation(fields: [inquilinoId], references: [id])

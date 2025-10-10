@@ -77,6 +77,10 @@ export class UsuarioService {
     if (usuarioLogado.tipo === 'INQUILINO') {
       throw new ApiError(403, "Inquilinos não podem criar outros usuários");
     }
+        if (usuarioLogado.tipo === 'VISITANTE') {
+      throw new ApiError(403, "Visitante não podem criar outros usuários");
+    }
+
 
     const inquilino = await usuarioModel.criarInquilino(data, usuarioLogado.empresaId);
     const token = generateAccessToken({
@@ -145,9 +149,13 @@ export class UsuarioService {
   }
 
   async listarUsuariosDaEmpresa(usuarioLogadoId: string, page: number = 1, limit: number = 10) {
+    
     const usuarioLogado = await usuarioModel.buscarPorId(usuarioLogadoId);
     if (!usuarioLogado) {
       throw new ApiError(404, "Usuário não encontrado");
+    }
+     if (usuarioLogado?.tipo === "VISITANTE" || usuarioLogado?.tipo === "INQUILINO") {
+      throw new ApiError(403, "Voce não tem permissao para visualizar lojas");
     }
 
     const resultado = await usuarioModel.listarUsuariosDaEmpresa(usuarioLogado.empresaId, page, limit);
@@ -159,7 +167,9 @@ export class UsuarioService {
     if (!usuarioLogado) {
       throw new ApiError(404, "Usuário logado não encontrado");
     }
-
+        if (usuarioLogado?.tipo === "VISITANTE" || usuarioLogado?.tipo === "INQUILINO") {
+      throw new ApiError(403, "Voce não tem permissao para visualizar lojas");
+    }
     const usuario = await usuarioModel.buscarPorId(id);
     if (!usuario) {
       throw new ApiError(404, "Usuário não encontrado");

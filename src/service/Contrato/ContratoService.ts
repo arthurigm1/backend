@@ -1,7 +1,7 @@
-import { 
-  ICriarContrato, 
-  IAtualizarContrato, 
-  IFiltrosContrato 
+import {
+  ICriarContrato,
+  IAtualizarContrato,
+  IFiltrosContrato
 } from "../../interface/Contrato/Contrato";
 import { ContratoModel } from "../../models/Contrato/ContratoModel";
 import { UsuarioModel } from "../../models/Usuario/UsuarioModel";
@@ -15,6 +15,10 @@ const lojaModel = new LojaModel();
 
 export class ContratoService {
   async criarContrato(data: ICriarContrato, usuarioId: string) {
+    const usuarioLogado = await usuarioModel.buscarPorId(usuarioId);
+    if (usuarioLogado?.tipo === "VISITANTE" || usuarioLogado?.tipo === "INQUILINO") {
+      throw new ApiError(403, "Voce não tem permissao");
+    }
     // Verificar se a loja existe
     const loja = await lojaModel.buscarPorId(data.lojaId);
     if (!loja) {
@@ -36,8 +40,7 @@ export class ContratoService {
     // Verificar se já existe um contrato ativo para esta loja
     const contratoAtivo = await contratoModel.listarContratos({
       lojaId: data.lojaId,
-      status: StatusContrato.ATIVO,
-      ativo: true
+      status: StatusContrato.ATIVO
     });
 
     if (Array.isArray(contratoAtivo) && contratoAtivo.length > 0) {
@@ -61,19 +64,27 @@ export class ContratoService {
 
     const contrato = await contratoModel.criarContrato(data);
 
-    // Atualizar status da loja para OCUPADA
-    await lojaModel.atualizarStatus(data.lojaId, StatusLoja.OCUPADA);
+    // Vincular inquilino à loja e atualizar status para OCUPADA
+    await lojaModel.editarLoja(data.lojaId, {
+      vincularInquilino: {
+        inquilinoId: data.inquilinoId
+      }
+    });
 
     return contrato;
   }
 
   async listarContratosDaEmpresa(
-    empresaId: string, 
-    usuarioId: string, 
+    empresaId: string,
+    usuarioId: string,
     filtros: IFiltrosContrato = {},
-    page?: number, 
+    page?: number,
     limit?: number
   ) {
+             const usuarioLogado = await usuarioModel.buscarPorId(usuarioId);
+         if(usuarioLogado?.tipo === "VISITANTE" || usuarioLogado?.tipo === "INQUILINO"){
+      throw new ApiError(403, "Voce não tem permissao");
+    }
     // Verificar se o usuário pertence à empresa
     const usuarioValido = await usuarioModel.verificarSeUsuarioPertenceEmpresa(usuarioId, empresaId);
     if (!usuarioValido) {
@@ -84,6 +95,10 @@ export class ContratoService {
   }
 
   async buscarContratoPorId(id: string, usuarioId: string) {
+             const usuarioLogado = await usuarioModel.buscarPorId(usuarioId);
+         if(usuarioLogado?.tipo === "VISITANTE" || usuarioLogado?.tipo === "INQUILINO"){
+      throw new ApiError(403, "Voce não tem permissao");
+    }
     const contrato = await contratoModel.buscarPorId(id);
     if (!contrato) {
       throw new ApiError(404, "Contrato não encontrado");
@@ -104,6 +119,10 @@ export class ContratoService {
   }
 
   async atualizarContrato(id: string, data: IAtualizarContrato, usuarioId: string) {
+             const usuarioLogado = await usuarioModel.buscarPorId(usuarioId);
+         if(usuarioLogado?.tipo === "VISITANTE" || usuarioLogado?.tipo === "INQUILINO"){
+      throw new ApiError(403, "Voce não tem permissao");
+    }
     const contrato = await contratoModel.buscarPorId(id);
     if (!contrato) {
       throw new ApiError(404, "Contrato não encontrado");
@@ -172,6 +191,10 @@ export class ContratoService {
   }
 
   async rescindirContrato(id: string, usuarioId: string, observacoes?: string) {
+             const usuarioLogado = await usuarioModel.buscarPorId(usuarioId);
+         if(usuarioLogado?.tipo === "VISITANTE" || usuarioLogado?.tipo === "INQUILINO"){
+      throw new ApiError(403, "Voce não tem permissao");
+    }
     const contrato = await contratoModel.buscarPorId(id);
     if (!contrato) {
       throw new ApiError(404, "Contrato não encontrado");
@@ -193,8 +216,7 @@ export class ContratoService {
     }
 
     const dadosAtualizacao: IAtualizarContrato = {
-      status: StatusContrato.RESCINDIDO,
-      ativo: false
+      status: StatusContrato.RESCINDIDO
     };
 
     if (observacoes) {
@@ -210,6 +232,10 @@ export class ContratoService {
   }
 
   async renovarContrato(id: string, novaDataFim: Date, usuarioId: string, novoValor?: number) {
+             const usuarioLogado = await usuarioModel.buscarPorId(usuarioId);
+         if(usuarioLogado?.tipo === "VISITANTE" || usuarioLogado?.tipo === "INQUILINO"){
+      throw new ApiError(403, "Voce não tem permissao");
+    }
     const contrato = await contratoModel.buscarPorId(id);
     if (!contrato) {
       throw new ApiError(404, "Contrato não encontrado");
@@ -233,8 +259,7 @@ export class ContratoService {
 
     const dadosAtualizacao: IAtualizarContrato = {
       dataFim: novaDataFim,
-      status: StatusContrato.ATIVO,
-      ativo: true
+      status: StatusContrato.ATIVO
     };
 
     if (novoValor !== undefined) {

@@ -41,7 +41,6 @@ export class FaturaService {
     const contratosAtivos = await prismaClient.contrato.findMany({
       where: {
         status: StatusContrato.ATIVO,
-        ativo: true,
         dataInicio: {
           lte: new Date(anoReferencia, mesReferencia - 1, 1) // Início do mês de referência
         },

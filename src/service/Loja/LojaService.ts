@@ -9,11 +9,14 @@ const usuarioModel = new UsuarioModel();
 export class LojaService {
   async criarLoja(data: ICriarLoja, usuarioId: string) {
     // Verificar se o usuário pertence à empresa
+    const usuarioLogado = await usuarioModel.buscarPorId(usuarioId);
     const usuarioValido = await usuarioModel.verificarSeUsuarioPertenceEmpresa(usuarioId, data.empresaId);
     if (!usuarioValido) {
       throw new ApiError(403, "Você não tem permissão para criar lojas nesta empresa");
     }
-
+    if (usuarioLogado?.tipo === "VISITANTE" || usuarioLogado?.tipo === "INQUILINO") {
+      throw new ApiError(403, "Voce não tem permissao para criar lojas");
+    }
     // Verificar se já existe uma loja com este número na empresa
     const lojaExistente = await lojaModel.buscarPorNumero(data.numero, data.empresaId);
     if (lojaExistente) {
@@ -25,6 +28,10 @@ export class LojaService {
   }
 
   async listarLojasDaEmpresa(empresaId: string, usuarioId: string, page?: number, limit?: number) {
+    const usuarioLogado = await usuarioModel.buscarPorId(usuarioId);
+    if (usuarioLogado?.tipo === "VISITANTE" || usuarioLogado?.tipo === "INQUILINO") {
+      throw new ApiError(403, "Voce não tem permissao para visualizar lojas");
+    }
     // Verificar se o usuário pertence à empresa
     const usuarioValido = await usuarioModel.verificarSeUsuarioPertenceEmpresa(usuarioId, empresaId);
     if (!usuarioValido) {
@@ -33,17 +40,25 @@ export class LojaService {
 
     return await lojaModel.listarLojasDaEmpresa(empresaId, page, limit);
   }
-async listarLojas(empresaId: string, usuarioId: string, filtros: any, page: number, limit: number) {
-  // Verificar se o usuário pertence à empresa pelo token JWT
-  const usuarioValido = await usuarioModel.verificarSeUsuarioPertenceEmpresa(usuarioId, empresaId);
-  if (!usuarioValido) {
-    throw new ApiError(403, "Você não tem permissão para visualizar lojas desta empresa");
+  async listarLojas(empresaId: string, usuarioId: string, filtros: any, page: number, limit: number) {
+    const usuarioLogado = await usuarioModel.buscarPorId(usuarioId);
+    if (usuarioLogado?.tipo === "VISITANTE" || usuarioLogado?.tipo === "INQUILINO") {
+      throw new ApiError(403, "Voce não tem permissao para visualizar lojas");
+    }
+    // Verificar se o usuário pertence à empresa pelo token JWT
+    const usuarioValido = await usuarioModel.verificarSeUsuarioPertenceEmpresa(usuarioId, empresaId);
+    if (!usuarioValido) {
+      throw new ApiError(403, "Você não tem permissão para visualizar lojas desta empresa");
+    }
+
+    return await lojaModel.listarLojas(empresaId, filtros, page, limit);
   }
-  
-  return await lojaModel.listarLojas(empresaId, filtros, page, limit);
-}
 
   async buscarLojaPorId(id: string, usuarioId: string, empresaId: string) {
+    const usuarioLogado = await usuarioModel.buscarPorId(usuarioId);
+    if (usuarioLogado?.tipo === "VISITANTE" || usuarioLogado?.tipo === "INQUILINO") {
+      throw new ApiError(403, "Voce não tem permissao para visualizar lojas");
+    }
     // Verificar se o usuário pertence à empresa
     const usuarioValido = await usuarioModel.verificarSeUsuarioPertenceEmpresa(usuarioId, empresaId);
     if (!usuarioValido) {
@@ -66,6 +81,10 @@ async listarLojas(empresaId: string, usuarioId: string, filtros: any, page: numb
 
 
   async atualizarStatusLoja(id: string, status: 'VAGA' | 'OCUPADA' | 'INATIVA', usuarioId: string) {
+    const usuarioLogado = await usuarioModel.buscarPorId(usuarioId);
+    if (usuarioLogado?.tipo === "VISITANTE" || usuarioLogado?.tipo === "INQUILINO") {
+      throw new ApiError(403, "Voce não tem permissao para visualizar lojas");
+    }
     const loja = await lojaModel.buscarPorId(id);
     if (!loja) {
       throw new ApiError(404, "Loja não encontrada");
@@ -80,6 +99,10 @@ async listarLojas(empresaId: string, usuarioId: string, filtros: any, page: numb
   }
 
   async editarLoja(id: string, data: any, usuarioId: string, empresaId: string) {
+    const usuarioLogado = await usuarioModel.buscarPorId(usuarioId);
+    if (usuarioLogado?.tipo === "VISITANTE" || usuarioLogado?.tipo === "INQUILINO") {
+      throw new ApiError(403, "Voce não tem permissao para visualizar lojas");
+    }
     // Verificar se a loja existe
     const loja = await lojaModel.buscarPorId(id);
     if (!loja) {
@@ -127,6 +150,10 @@ async listarLojas(empresaId: string, usuarioId: string, filtros: any, page: numb
   }
 
   async desativarLoja(id: string, usuarioId: string, empresaId: string) {
+    const usuarioLogado = await usuarioModel.buscarPorId(usuarioId);
+    if (usuarioLogado?.tipo === "VISITANTE" || usuarioLogado?.tipo === "INQUILINO") {
+      throw new ApiError(403, "Voce não tem permissao para visualizar lojas");
+    }
     // Verificar se o usuário pertence à empresa
     const usuarioValido = await usuarioModel.verificarSeUsuarioPertenceEmpresa(usuarioId, empresaId);
     if (!usuarioValido) {
@@ -153,6 +180,10 @@ async listarLojas(empresaId: string, usuarioId: string, filtros: any, page: numb
   }
 
   async desvincularInquilino(id: string, usuarioId: string, empresaId: string) {
+    const usuarioLogado = await usuarioModel.buscarPorId(usuarioId);
+    if (usuarioLogado?.tipo === "VISITANTE" || usuarioLogado?.tipo === "INQUILINO") {
+      throw new ApiError(403, "Voce não tem permissao para visualizar lojas");
+    }
     // Verificar se a loja existe e pertence à empresa
     const loja = await lojaModel.buscarPorId(id);
     if (!loja) {

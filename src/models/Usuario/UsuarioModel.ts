@@ -122,7 +122,7 @@ async login(email: string) {
     return await prismaClient.contrato.findFirst({
       where: {
         inquilinoId: inquilinoId,
-        ativo: true,
+        status: 'ATIVO',
       },
     });
   }

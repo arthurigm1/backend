@@ -189,9 +189,6 @@ export class ContratoModel {
     if (filtros.status) {
       where.status = filtros.status;
     }
-    if (filtros.ativo !== undefined) {
-      where.ativo = filtros.ativo;
-    }
     if (filtros.lojaId) {
       where.lojaId = filtros.lojaId;
     }
@@ -290,9 +287,7 @@ export class ContratoModel {
     if (filtros.status) {
       where.status = filtros.status;
     }
-    if (filtros.ativo !== undefined) {
-      where.ativo = filtros.ativo;
-    }
+
     if (filtros.lojaId) {
       where.lojaId = filtros.lojaId;
     }
@@ -392,7 +387,6 @@ export class ContratoModel {
           lte: dataLimite,
         },
         status: StatusContrato.ATIVO,
-        ativo: true,
       },
       include: {
         loja: {
@@ -425,7 +419,6 @@ export class ContratoModel {
           lt: hoje,
         },
         status: StatusContrato.ATIVO,
-        ativo: true,
       },
       include: {
         loja: {

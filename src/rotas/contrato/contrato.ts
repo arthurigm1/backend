@@ -23,9 +23,6 @@ router.get("/id/:id", contratoController.buscarContratoPorId);
 // Atualizar contrato (apenas ADMIN_EMPRESA e FUNCIONARIO)
 router.put("/atualizar/:id", requireAdmin, contratoController.atualizarContrato);
 
-// Deletar contrato (apenas ADMIN_EMPRESA)
-router.delete("/deletar/:id", requireAdmin, contratoController.deletarContrato);
-
 // Rescindir contrato (apenas ADMIN_EMPRESA e FUNCIONARIO)
 router.patch("/rescindir/:id", requireAdmin, contratoController.rescindirContrato);
 

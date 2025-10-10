@@ -31,7 +31,7 @@ export class PortalInquilinoService {
       prismaClient.contrato.findMany({
         where: { 
           inquilinoId,
-          ativo: true 
+          status: 'ATIVO'
         },
         include: {
           loja: true

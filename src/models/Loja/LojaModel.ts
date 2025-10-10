@@ -58,8 +58,8 @@ export class LojaModel {
         where: { empresaId },
         include: {
           contratos: {
-            where: { ativo: true },
-            include: {
+          where: { status: 'ATIVO' },
+          include: {
               inquilino: {
                 select: {
                   id: true,
@@ -85,7 +85,7 @@ export class LojaModel {
       where: { empresaId },
       include: {
         contratos: {
-          where: { ativo: true },
+          where: { status: 'ATIVO' },
           include: {
             inquilino: {
               select: {
@@ -165,7 +165,7 @@ async listarLojas(empresaId: string, filtros: any, page: number, limit: number) 
           },
         },
         contratos: {
-          where: { ativo: true },
+          where: { status: 'ATIVO' },
           include: {
             inquilino: {
               select: {
