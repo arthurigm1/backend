@@ -50,7 +50,15 @@ export class FaturaService {
       },
       include: {
         loja: true,
-        inquilino: true
+        inquilino: {
+          select: {
+            id: true,
+            nome: true,
+            email: true,
+            telefone: true,
+            cpf: true
+          }
+        }
       }
     });
 
@@ -237,7 +245,15 @@ export class FaturaService {
           contrato: {
             include: {
               loja: true,
-              inquilino: true
+              inquilino: {
+                select: {
+                  id: true,
+                  nome: true,
+                  email: true,
+                  telefone: true,
+                  cpf: true,
+                }
+              }
             }
           }
         },
@@ -280,7 +296,15 @@ export class FaturaService {
         contrato: {
           include: {
             loja: true,
-            inquilino: true
+            inquilino: {
+              select: {
+                id: true,
+                nome: true,
+                email: true,
+                telefone: true,
+                cpf: true,
+              }
+            }
           }
         }
       }

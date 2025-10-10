@@ -205,7 +205,14 @@ export class NotificacaoModel {
       include: {
         contrato: {
           include: {
-            inquilino: true,
+            inquilino: {
+              select: {
+                id: true,
+                nome: true,
+                email: true,
+                telefone: true
+              }
+            },
             loja: true
           }
         }
@@ -226,7 +233,14 @@ export class NotificacaoModel {
       include: {
         contrato: {
           include: {
-            inquilino: true,
+            inquilino: {
+              select: {
+                id: true,
+                nome: true,
+                email: true,
+                telefone: true
+              }
+            },
             loja: true
           }
         }
@@ -245,7 +259,14 @@ export class NotificacaoModel {
         }
       },
       include: {
-        inquilino: true,
+        inquilino: {
+          select: {
+            id: true,
+            nome: true,
+            email: true,
+            telefone: true
+          }
+        },
         loja: true
       }
     });
