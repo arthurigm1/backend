@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { EFIController } from '../controllers/EFIController';
+import { authenticateJWT } from '../middleware/auth.middleware';
 
 const router = Router();
 const efiController = new EFIController();
@@ -37,6 +38,13 @@ const efiController = new EFIController();
  * }
  */
 router.post('/charge/one-step', efiController.criarCobrancaOneStep);
+
+/**
+ * @route GET /api/efi/charge/:efiCobrancaId
+ * @desc Consultar cobrança na EFI por efiCobrancaId (buscar chargeId no banco) e atualizar EFICobranca/Fatura
+ * @access Private
+ */
+router.get('/charge/:efiCobrancaId', efiController.consultarCobrancaEAtualizarPorId);
 
 /**
  * @route POST /api/efi/cobranca

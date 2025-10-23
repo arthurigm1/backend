@@ -114,4 +114,37 @@ export class EFIService {
       throw new Error('Falha ao criar cobrança one-step na EFI Pagamentos');
     }
   }
+
+  /**
+   * Consulta cobrança na EFI pelo charge_id
+   */
+  async consultarCobrancaPorId(chargeId: number | string): Promise<any> {
+    try {
+      const token = await this.getAccessToken();
+
+      console.log('Consultando cobrança EFI por ID:', chargeId);
+
+      const config = {
+        method: "GET" as const,
+        url: `${this.baseURL}/charge/${chargeId}`,
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        timeout: 30000,
+      };
+
+      const response: AxiosResponse<any> = await axios(config);
+      console.log('Cobrança consultada com sucesso:', response.data);
+      return response.data; // deve conter { code, data: { status, total, payment, ... } }
+    } catch (error: any) {
+      console.error('Erro detalhado ao consultar cobrança EFI por ID:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        config: error.config?.url
+      });
+      throw new Error('Falha ao consultar cobrança na EFI Pagamentos');
+    }
+  }
 }

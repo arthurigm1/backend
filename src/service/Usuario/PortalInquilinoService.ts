@@ -140,14 +140,23 @@ export class PortalInquilinoService {
     em7Dias.setDate(hoje.getDate() + 7);
 
     return {
-      pendentes: faturas.filter(f => f.status === StatusFatura.PENDENTE && !f.diasEmAtraso),
-      emAtraso: faturas.filter(f => f.diasEmAtraso && f.diasEmAtraso > 0),
+      // Pendentes e ainda não vencidas
+      pendentes: faturas.filter(f => 
+        f.status === StatusFatura.PENDENTE && (!f.diasEmAtraso || f.diasEmAtraso <= 0)
+      ),
+      // Em atraso: somente faturas não pagas (PENDENTE ou VENCIDA) com atraso
+      emAtraso: faturas.filter(f => 
+        (f.status === StatusFatura.PENDENTE || f.status === StatusFatura.VENCIDA) && 
+        f.diasEmAtraso && f.diasEmAtraso > 0
+      ),
+      // Próximas a vencer: pendentes com vencimento em até 7 dias
       proximasVencer: faturas.filter(f => 
         f.status === StatusFatura.PENDENTE && 
         f.diasParaVencimento && 
         f.diasParaVencimento <= 7 && 
         f.diasParaVencimento > 0
       ),
+      // Pagas
       pagas: faturas.filter(f => f.status === StatusFatura.PAGA)
     };
   }
@@ -157,7 +166,10 @@ export class PortalInquilinoService {
    */
   private calcularResumoFinanceiro(faturas: IFaturaInquilino[]): IResumoFinanceiro {
     const faturasPendentes = faturas.filter(f => f.status === StatusFatura.PENDENTE);
-    const faturasEmAtraso = faturas.filter(f => f.diasEmAtraso && f.diasEmAtraso > 0);
+    const faturasEmAtraso = faturas.filter(f => 
+      (f.status === StatusFatura.PENDENTE || f.status === StatusFatura.VENCIDA) && 
+      f.diasEmAtraso && f.diasEmAtraso > 0
+    );
     const faturasPagas = faturas.filter(f => f.status === StatusFatura.PAGA);
     
     const valorTotalPendente = faturasPendentes.reduce((total, fatura) => total + fatura.valorAluguel, 0);
