@@ -1,8 +1,10 @@
 import { ICriarEmpresa } from "../../interface/Empresa/Empresa";
 import { EmpresaModel } from "../../models/Empresa/EmpresaModel";
+import { NotificacaoModel } from "../../models/Notificacao/NotificacaoModel";
 import { ApiError } from "../../utils/apiError";
 
 const empresaModel = new EmpresaModel();
+const notificacaoModel = new NotificacaoModel();
 
 export class EmpresaService {
   async criarEmpresa(data: ICriarEmpresa) {
@@ -39,6 +41,94 @@ export class EmpresaService {
 
   async listarEmpresas() {
     return await empresaModel.listarEmpresas();
+  }
+
+  async buscarInquilinosInadimplentes(
+    empresaId: string,
+    filtros?: {
+      lojaId?: string;
+      inquilinoId?: string;
+      q?: string;
+      page?: number;
+      limit?: number;
+    }
+  ) {
+    const { lojaId, inquilinoId, q, page = 1, limit = 10 } = filtros || {};
+
+    // Validar paginação
+    if (page < 1) {
+      throw new ApiError(400, "Página deve ser maior que 0");
+    }
+    if (limit < 1 || limit > 100) {
+      throw new ApiError(400, "Limite deve estar entre 1 e 100");
+    }
+
+    // Buscar faturas vencidas
+    const faturasVencidas = await notificacaoModel.buscarFaturasVencidas();
+    
+    // Filtrar por empresa
+    const faturasEmpresa = faturasVencidas.filter(f => f.contrato.inquilino.empresaId === empresaId);
+    
+    // Aplicar filtros
+    let faturasFiltradasSet = new Set();
+    
+    for (const fatura of faturasEmpresa) {
+      const inquilino = fatura.contrato.inquilino;
+      const loja = fatura.contrato.loja;
+      
+      // Filtro por loja
+      if (lojaId && loja.id !== lojaId) continue;
+      
+      // Filtro por inquilino específico
+      if (inquilinoId && inquilino.id !== inquilinoId) continue;
+      
+      // Filtro por busca (nome ou email)
+      if (q) {
+        const busca = q.toLowerCase();
+        const nomeMatch = inquilino.nome.toLowerCase().includes(busca);
+        const emailMatch = inquilino.email?.toLowerCase().includes(busca);
+        if (!nomeMatch && !emailMatch) continue;
+      }
+      
+      // Adicionar inquilino único ao set
+      const vencimento = fatura.dataVencimento ? new Date(fatura.dataVencimento) : undefined;
+      const diasEmAtraso = vencimento ? Math.max(0, Math.floor((Date.now() - vencimento.getTime()) / (1000 * 60 * 60 * 24))) : undefined;
+      faturasFiltradasSet.add(JSON.stringify({
+        nome: inquilino.nome,
+        email: inquilino.email,
+        telefone: inquilino.telefone,
+        lojaNome: loja.nome,
+        valorFatura: fatura.valorAluguel,
+        vencimento,
+        diasEmAtraso
+      }));
+    }
+    
+    // Converter set para array e parsear
+    const inquilinosUnicos = Array.from(faturasFiltradasSet).map(item => JSON.parse(item as string));
+    
+    // Aplicar paginação
+    const totalRegistros = inquilinosUnicos.length;
+    const totalPaginas = Math.ceil(totalRegistros / limit);
+    const offset = (page - 1) * limit;
+    const inquilinosPaginados = inquilinosUnicos.slice(offset, offset + limit);
+    
+    return {
+      inquilinos: inquilinosPaginados,
+      paginacao: {
+        paginaAtual: page,
+        totalPaginas,
+        totalRegistros,
+        limite: limit,
+        temProximaPagina: page < totalPaginas,
+        temPaginaAnterior: page > 1
+      },
+      filtros: {
+        lojaId,
+        inquilinoId,
+        q
+      }
+    };
   }
 
   private validarCNPJ(cnpj: string): boolean {

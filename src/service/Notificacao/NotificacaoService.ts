@@ -3,6 +3,7 @@ import { UsuarioModel } from "../../models/Usuario/UsuarioModel";
 import { ICriarNotificacao, INotificacao, IFiltroNotificacoes } from "../../interface/Notificacao/Notificacao";
 import { TipoNotificacao } from "../../generated/prisma";
 import { ApiError } from "../../utils/apiError";
+import { emailService } from "../Email/EmailService";
 
 export class NotificacaoService {
   private notificacaoModel: NotificacaoModel;
@@ -260,5 +261,103 @@ export class NotificacaoService {
 
   async limparNotificacoesAntigas(): Promise<number> {
     return await this.notificacaoModel.deletarNotificacoesAntigas(30);
+  }
+
+  // Enviar notificações pré-definidas via sistema para todos os inquilinos da empresa do admin
+  async enviarSistemaPredefinidas(usuarioSolicitante: string, tipo: TipoNotificacao, mensagem: string, inquilinoId?: string): Promise<{ destinatarios: number; notificacoesCriadas: number; }> {
+    const usuario = await this.usuarioModel.buscarPorId(usuarioSolicitante);
+    if (!usuario) {
+      throw new ApiError(404, "Usuário não encontrado");
+    }
+    if (usuario.tipo !== 'ADMIN_EMPRESA') {
+      throw new ApiError(403, "Apenas administradores podem enviar notificações em massa");
+    }
+    if (!usuario.empresaId) {
+      throw new ApiError(400, "Administrador sem empresa associada");
+    }
+
+    let inquilinos;
+    if (inquilinoId) {
+      const inquilino = await this.usuarioModel.buscarPorId(inquilinoId);
+      if (!inquilino) {
+        throw new ApiError(404, "Inquilino não encontrado");
+      }
+      if (inquilino.tipo !== 'INQUILINO') {
+        throw new ApiError(400, "Usuário informado não é um inquilino");
+      }
+      if (inquilino.empresaId !== usuario.empresaId) {
+        throw new ApiError(403, "Inquilino não pertence à sua empresa");
+      }
+      inquilinos = [inquilino];
+    } else {
+      inquilinos = await this.usuarioModel.listarInquilinosDaEmpresa(usuario.empresaId);
+    }
+
+    const notificacoes: ICriarNotificacao[] = inquilinos.map((inq) => ({
+      usuarioId: inq.id,
+      mensagem,
+      tipo
+    }));
+
+    const count = await this.notificacaoModel.criarNotificacaoEmLote(notificacoes);
+    return { destinatarios: inquilinos.length, notificacoesCriadas: count };
+  }
+
+  // Enviar notificações pré-definidas via email para todos os inquilinos da empresa do admin
+  async enviarEmailPredefinidas(usuarioSolicitante: string, tipo: TipoNotificacao, mensagem: string, assunto?: string, inquilinoId?: string): Promise<{ destinatarios: number; emailsEnviados: number; }> {
+    const usuario = await this.usuarioModel.buscarPorId(usuarioSolicitante);
+    if (!usuario) {
+      throw new ApiError(404, "Usuário não encontrado");
+    }
+    if (usuario.tipo !== 'ADMIN_EMPRESA') {
+      throw new ApiError(403, "Apenas administradores podem enviar emails em massa");
+    }
+    if (!usuario.empresaId) {
+      throw new ApiError(400, "Administrador sem empresa associada");
+    }
+
+    let inquilinos;
+    if (inquilinoId) {
+      const inquilino = await this.usuarioModel.buscarPorId(inquilinoId);
+      if (!inquilino) {
+        throw new ApiError(404, "Inquilino não encontrado");
+      }
+      if (inquilino.tipo !== 'INQUILINO') {
+        throw new ApiError(400, "Usuário informado não é um inquilino");
+      }
+      if (inquilino.empresaId !== usuario.empresaId) {
+        throw new ApiError(403, "Inquilino não pertence à sua empresa");
+      }
+      inquilinos = [inquilino];
+    } else {
+      inquilinos = await this.usuarioModel.listarInquilinosDaEmpresa(usuario.empresaId);
+    }
+
+    // Assunto padrão baseado no tipo de notificação
+    const assuntoPadrao = (() => {
+      switch (tipo) {
+        case TipoNotificacao.PAGAMENTO_VENCIDO: return 'Aviso de Fatura Vencida';
+        case TipoNotificacao.PAGAMENTO_PROXIMO_VENCIMENTO: return 'Sua fatura vence em breve';
+        case TipoNotificacao.PAGAMENTO_REALIZADO: return 'Pagamento confirmado';
+        case TipoNotificacao.CONTRATO_VENCIMENTO: return 'Contrato próximo do vencimento';
+        default: return 'Comunicado importante';
+      }
+    })();
+
+    const assuntoFinal = assunto || assuntoPadrao;
+
+    let enviados = 0;
+    for (const inq of inquilinos) {
+      if (!inq.email) continue;
+      try {
+        await emailService.enviarEmailNotificacaoGeral(inq.email, inq.nome, assuntoFinal, mensagem);
+        enviados++;
+      } catch (err) {
+        // Logar e seguir para próximo
+        console.error(`Falha ao enviar email para ${inq.email}:`, err);
+      }
+    }
+
+    return { destinatarios: inquilinos.length, emailsEnviados: enviados };
   }
 }

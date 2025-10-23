@@ -25,3 +25,11 @@ export const filtroNotificacoesSchema = z.object({
 export const marcarComoLidaSchema = z.object({
   notificacaoId: z.string().min(1, "ID da notificação é obrigatório"),
 });
+
+// Schema para envio de notificações pré-definidas em massa (admin)
+export const enviarPredefinidasSchema = z.object({
+  tipo: tipoNotificacaoEnum,
+  mensagem: z.string().min(1, "Mensagem é obrigatória").max(500, "Mensagem muito longa"),
+  assunto: z.string().min(1, "Assunto é obrigatório").max(200, "Assunto muito longo").optional(),
+  inquilinoId: z.string().min(1, "ID do inquilino é inválido").optional(),
+});

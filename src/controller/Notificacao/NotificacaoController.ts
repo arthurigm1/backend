@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { NotificacaoService } from "../../service/Notificacao/NotificacaoService";
-import { criarNotificacaoSchema, filtroNotificacoesSchema, marcarComoLidaSchema } from "../../schema/Notificacao.schema";
+import { criarNotificacaoSchema, filtroNotificacoesSchema, marcarComoLidaSchema, enviarPredefinidasSchema } from "../../schema/Notificacao.schema";
 import { TipoNotificacao } from "../../generated/prisma";
 
 const notificacaoService = new NotificacaoService();
@@ -205,6 +205,75 @@ export class NotificacaoController {
       return res.status(200).json({
         sucesso: true,
         estatisticas: estatisticas,
+      });
+    } catch (error: any) {
+      return res.status(error.statusCode || 500).json({
+        error: error.message || "Erro interno do servidor",
+      });
+    }
+  }
+
+  async enviarSistemaPredefinidas(req: Request, res: Response): Promise<Response> {
+    try {
+      const usuarioId = req.user?.id;
+      if (!usuarioId) {
+        return res.status(401).json({ error: "Usuário não autenticado" });
+      }
+
+      const parsed = enviarPredefinidasSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ 
+          error: "Dados inválidos",
+          details: parsed.error.errors
+        });
+      }
+
+      const resultado = await notificacaoService.enviarSistemaPredefinidas(
+        usuarioId,
+        parsed.data.tipo as TipoNotificacao,
+        parsed.data.mensagem,
+        parsed.data.inquilinoId
+      );
+
+      return res.status(200).json({
+        sucesso: true,
+        mensagem: "Notificações do sistema enviadas com sucesso",
+        resultado,
+      });
+    } catch (error: any) {
+      return res.status(error.statusCode || 500).json({
+        error: error.message || "Erro interno do servidor",
+      });
+    }
+  }
+
+  async enviarEmailPredefinidas(req: Request, res: Response): Promise<Response> {
+    try {
+      const usuarioId = req.user?.id;
+      if (!usuarioId) {
+        return res.status(401).json({ error: "Usuário não autenticado" });
+      }
+
+      const parsed = enviarPredefinidasSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ 
+          error: "Dados inválidos",
+          details: parsed.error.errors
+        });
+      }
+
+      const resultado = await notificacaoService.enviarEmailPredefinidas(
+        usuarioId,
+        parsed.data.tipo as TipoNotificacao,
+        parsed.data.mensagem,
+        parsed.data.assunto,
+        parsed.data.inquilinoId
+      );
+
+      return res.status(200).json({
+        sucesso: true,
+        mensagem: "Emails enviados com sucesso",
+        resultado,
       });
     } catch (error: any) {
       return res.status(error.statusCode || 500).json({

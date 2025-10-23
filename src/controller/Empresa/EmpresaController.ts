@@ -82,4 +82,39 @@ export class EmpresaController {
       });
     }
   }
+
+  async listarInadimplentes(req: Request, res: Response): Promise<Response> {
+    try {
+      const usuarioId = req.user?.id;
+      if (!usuarioId) {
+        return res.status(401).json({ error: "Usuário não autenticado" });
+      }
+
+      const empresaId = req.user?.empresaId;
+      if (!empresaId) {
+        return res.status(400).json({ error: "Usuário sem empresa associada" });
+      }
+
+      const { lojaId, inquilinoId, q, page, limit } = req.query;
+
+      const filtros = {
+        lojaId: lojaId as string,
+        inquilinoId: inquilinoId as string,
+        q: q as string,
+        page: page ? parseInt(page as string) : undefined,
+        limit: limit ? parseInt(limit as string) : undefined,
+      };
+
+      const resultado = await empresaService.buscarInquilinosInadimplentes(empresaId, filtros);
+      
+      return res.status(200).json({
+        sucesso: true,
+        ...resultado,
+      });
+    } catch (error: any) {
+      return res.status(error.statusCode || 500).json({
+        error: error.message || "Erro interno do servidor",
+      });
+    }
+  }
 }

@@ -197,10 +197,10 @@ export class NotificacaoModel {
     const hoje = new Date();
     return await prismaClient.fatura.findMany({
       where: {
-        status: 'PENDENTE',
-        dataVencimento: {
-          lt: hoje
-        }
+        OR: [
+          { status: 'VENCIDA' },
+          { status: 'PENDENTE', dataVencimento: { lt: hoje } }
+        ]
       },
       include: {
         contrato: {
@@ -210,7 +210,8 @@ export class NotificacaoModel {
                 id: true,
                 nome: true,
                 email: true,
-                telefone: true
+                telefone: true,
+                empresaId: true
               }
             },
             loja: true
@@ -238,7 +239,8 @@ export class NotificacaoModel {
                 id: true,
                 nome: true,
                 email: true,
-                telefone: true
+                telefone: true,
+                empresaId: true
               }
             },
             loja: true

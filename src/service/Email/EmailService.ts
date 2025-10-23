@@ -14,8 +14,8 @@ export class EmailService {
       port: 587,
       secure: false, // true para 465, false para outras portas
       auth: {
-        user: process.env.MAIL_USER,
-        pass: process.env.MAIL_PASSWORD
+        user: "arthurmartinsig1@gmail.com",
+        pass: "gwmv pzox kufv mbqd"
       },
       tls: {
         rejectUnauthorized: false
@@ -100,6 +100,39 @@ export class EmailService {
     } catch (error) {
       console.error('Erro ao enviar email de confirmação:', error);
       throw new ApiError(500, 'Erro ao enviar email de confirmação');
+    }
+  }
+
+  // Enviar email de notificação geral com assunto e mensagem personalizados
+  async enviarEmailNotificacaoGeral(email: string, nome: string, assunto: string, mensagem: string): Promise<void> {
+    try {
+      const mailOptions = {
+        from: process.env.GMAIL_USER,
+        to: email,
+        subject: assunto,
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <h2 style="color: #333; text-align: center;">${assunto}</h2>
+            
+            <p>Olá <strong>${nome}</strong>,</p>
+            
+            <p style="color: #333;">${mensagem}</p>
+            
+            <p style="color: #666; font-size: 12px;">Este é um comunicado automático do Sistema de Gestão.</p>
+            
+            <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
+            <p style="color: #666; font-size: 12px; text-align: center;">
+              Este é um email automático, não responda.
+            </p>
+          </div>
+        `
+      };
+
+      await this.transporter.sendMail(mailOptions);
+      console.log(`Email de notificação enviado para: ${email}`);
+    } catch (error) {
+      console.error('Erro ao enviar email de notificação:', error);
+      throw new ApiError(500, 'Erro ao enviar email de notificação');
     }
   }
 }

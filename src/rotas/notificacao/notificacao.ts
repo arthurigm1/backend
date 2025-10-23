@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { NotificacaoController } from "../../controller/Notificacao/NotificacaoController";
 import { authenticateJWT } from "../../middleware/auth.middleware";
+import { requireAdmin } from "../../middleware/admin.middleware";
 
 const router = Router();
 const notificacaoController = new NotificacaoController();
@@ -34,5 +35,11 @@ router.get("/empresa/:empresaId", notificacaoController.listarPorEmpresa);
 
 // Obter estatísticas de notificações (apenas ADMIN_EMPRESA e FUNCIONARIO)
 router.get("/estatisticas/:empresaId", notificacaoController.obterEstatisticas);
+
+// Enviar notificações pré-definidas via sistema (apenas ADMIN_EMPRESA)
+router.post("/enviar-sistema", requireAdmin, notificacaoController.enviarSistemaPredefinidas);
+
+// Enviar notificações pré-definidas via email (apenas ADMIN_EMPRESA)
+router.post("/enviar-email", requireAdmin, notificacaoController.enviarEmailPredefinidas);
 
 export default router;
