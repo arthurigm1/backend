@@ -1,9 +1,11 @@
 import { Request, Response } from "express";
 import { EmpresaService } from "../../service/Empresa/EmpresaService";
 import { criarEmpresaSchema } from "../../schema/Empresa.schema";
+import { AnalyticsService } from "../../service/Empresa/AnalyticsService";
 
 
 const empresaService = new EmpresaService();
+const analyticsService = new AnalyticsService();
 
 export class EmpresaController {
   async create(req: Request, res: Response): Promise<Response> {
@@ -111,6 +113,36 @@ export class EmpresaController {
         sucesso: true,
         ...resultado,
       });
+    } catch (error: any) {
+      return res.status(error.statusCode || 500).json({
+        error: error.message || "Erro interno do servidor",
+      });
+    }
+  }
+
+  async obterAnalytics(req: Request, res: Response): Promise<Response> {
+    try {
+      const empresaId = req.user?.empresaId;
+      if (!empresaId) {
+        return res.status(400).json({ error: "Usuário sem empresa associada" });
+      }
+
+      // Filtros de período (opcionais)
+      const { inicio, fim } = req.query;
+      let inicioDate: Date | undefined;
+      let fimDate: Date | undefined;
+
+      if (typeof inicio === 'string' && inicio.trim()) {
+        const d = new Date(inicio);
+        if (!isNaN(d.getTime())) inicioDate = d;
+      }
+      if (typeof fim === 'string' && fim.trim()) {
+        const d = new Date(fim);
+        if (!isNaN(d.getTime())) fimDate = d;
+      }
+
+      const dados = await analyticsService.gerarAnalyticsEmpresa(empresaId, { inicio: inicioDate, fim: fimDate });
+      return res.status(200).json({ sucesso: true, analytics: dados });
     } catch (error: any) {
       return res.status(error.statusCode || 500).json({
         error: error.message || "Erro interno do servidor",

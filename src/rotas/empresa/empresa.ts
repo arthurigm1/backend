@@ -18,4 +18,7 @@ router.get("/listar", empresaController.listar);
 // Rota para listar inquilinos inadimplentes (apenas admin)
 router.get("/inadimplentes", authenticateJWT, empresaController.listarInadimplentes);
 
+// Analytics da empresa (protegido)
+router.get("/analytics", authenticateJWT, empresaController.obterAnalytics);
+
 export default router;
