@@ -26,6 +26,7 @@ model Usuario {
   cpf                  String?       @unique
   telefone             String?
   tipo                 TipoUsuario
+  ativo                Boolean       @default(true)
   empresaId            String
   criadoEm             DateTime      @default(now())
   resetPasswordExpires DateTime?

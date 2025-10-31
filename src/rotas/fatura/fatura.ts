@@ -1,12 +1,14 @@
 import { Router } from "express";
 import { FaturaController } from "../../controller/Fatura/FaturaController";
 import { authenticateJWT } from "../../middleware/auth.middleware";
+import { requireActiveUser } from "../../middleware/active.middleware";
 
 const router = Router();
 const faturaController = new FaturaController();
 
 // Middleware de autenticação para todas as rotas de fatura
 router.use(authenticateJWT);
+router.use(requireActiveUser);
 
 /**
  * @route POST /fatura/gerar-mensais
@@ -33,6 +35,14 @@ router.get("/", faturaController.listarFaturas.bind(faturaController));
  * @example GET /fatura/contrato/123e4567-e89b-12d3-a456-426614174000?page=1&limit=10
  */
 router.get("/contrato/:contratoId", faturaController.listarFaturasPorContrato.bind(faturaController));
+
+/**
+ * @route GET /fatura/:id/detalhes
+ * @desc Busca detalhes completos da fatura com informações relevantes
+ * @param id - ID da fatura
+ * @example GET /fatura/123e4567-e89b-12d3-a456-426614174000/detalhes
+ */
+router.get("/detalhes/:id", faturaController.buscarDetalhesCompletos.bind(faturaController));
 
 /**
  * @route GET /fatura/:id

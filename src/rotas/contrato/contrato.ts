@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { ContratoController } from "../../controller/Contrato/ContratoController";
 import { authenticateJWT } from "../../middleware/auth.middleware";
+import { requireActiveUser } from "../../middleware/active.middleware";
 import { requireAdmin } from "../../middleware/admin.middleware";
 
 const router = Router();
@@ -8,6 +9,7 @@ const contratoController = new ContratoController();
 
 // Todas as rotas de contrato requerem autenticação
 router.use(authenticateJWT);
+router.use(requireActiveUser);
 
 // Criar novo contrato (apenas ADMIN_EMPRESA e FUNCIONARIO)
 router.post("/criar", requireAdmin, contratoController.criarContrato);

@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { NotificacaoController } from "../../controller/Notificacao/NotificacaoController";
 import { authenticateJWT } from "../../middleware/auth.middleware";
+import { requireActiveUser } from "../../middleware/active.middleware";
 import { requireAdmin } from "../../middleware/admin.middleware";
 
 const router = Router();
@@ -8,6 +9,7 @@ const notificacaoController = new NotificacaoController();
 
 // Todas as rotas de notificação requerem autenticação
 router.use(authenticateJWT);
+router.use(requireActiveUser);
 
 // Criar nova notificação (apenas ADMIN_EMPRESA e FUNCIONARIO)
 router.post("/criar", notificacaoController.create);

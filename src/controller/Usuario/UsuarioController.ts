@@ -237,4 +237,56 @@ export class UsuarioController {
       });
     }
   }
+
+  async desativarUsuario(req: Request, res: Response): Promise<Response> {
+    try {
+      const usuarioLogadoId = req.user?.id;
+      const { id } = req.params;
+
+      if (!usuarioLogadoId) {
+        return res.status(401).json({ error: "Usuário não autenticado" });
+      }
+
+      if (!id) {
+        return res.status(400).json({ error: "ID do usuário é obrigatório" });
+      }
+
+      const usuario = await usuarioService.desativarUsuario(id, usuarioLogadoId);
+      return res.status(200).json({
+        sucesso: true,
+        mensagem: "Usuário desativado com sucesso",
+        usuario,
+      });
+    } catch (error: any) {
+      return res.status(error.statusCode || 500).json({
+        error: error.message || "Erro interno do servidor",
+      });
+    }
+  }
+
+  async ativarUsuario(req: Request, res: Response): Promise<Response> {
+    try {
+      const usuarioLogadoId = req.user?.id;
+      const { id } = req.params;
+
+      if (!usuarioLogadoId) {
+        return res.status(401).json({ error: "Usuário não autenticado" });
+      }
+
+      if (!id) {
+        return res.status(400).json({ error: "ID do usuário é obrigatório" });
+      }
+
+      const usuario = await usuarioService.ativarUsuario(id, usuarioLogadoId);
+      return res.status(200).json({
+        sucesso: true,
+        mensagem: "Usuário ativado com sucesso",
+        usuario,
+      });
+    } catch (error: any) {
+      return res.status(error.statusCode || 500).json({
+        error: error.message || "Erro interno do servidor",
+      });
+    }
+  }
 }

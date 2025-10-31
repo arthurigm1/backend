@@ -18,6 +18,36 @@ export class UsuarioModel {
     });
   }
 
+  async desativarUsuario(usuarioId: string) {
+    return await prismaClient.usuario.update({
+      where: { id: usuarioId },
+      data: {
+        ativo: false,
+      },
+      select: {
+        id: true,
+        nome: true,
+        email: true,
+        tipo: true,
+        ativo: true,
+        empresaId: true,
+      }
+    });
+  }
+  async ativarUsuario(usuarioId: string) {
+    return await prismaClient.usuario.update({
+      where: { id: usuarioId },
+      data: { ativo: true },
+      select: {
+        id: true,
+        nome: true,
+        email: true,
+        tipo: true,
+        ativo: true,
+        empresaId: true,
+      }
+    });
+  }
   async criarInquilino(inquilino: ICriarInquilino, empresaId: string) {
     return await prismaClient.usuario.create({
       data: {
@@ -41,6 +71,7 @@ async login(email: string) {
       email: true,
       senha: true,
       tipo: true,
+      ativo: true,
       empresaId: true,
       empresa: { select: { id: true, nome: true, cnpj: true } },
     },
@@ -85,6 +116,7 @@ async login(email: string) {
         cpf: true,
         telefone: true,
         tipo: true,
+        ativo: true,
         criadoEm: true,
       },
       skip: skip,

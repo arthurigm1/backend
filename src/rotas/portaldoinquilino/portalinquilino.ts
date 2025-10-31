@@ -1,12 +1,14 @@
 import { Router } from "express";
 import { PortalInquilinoController } from "../../controller/Usuario/PortalInquilinoController";
 import { authenticateJWT } from "../../middleware/auth.middleware";
+import { requireActiveUser } from "../../middleware/active.middleware";
 
 const router = Router();
 const portalInquilinoController = new PortalInquilinoController();
 
 // Middleware de autenticação para todas as rotas do portal do inquilino
 router.use(authenticateJWT);
+router.use(requireActiveUser);
 
 /**
  * @route GET /portal-inquilino/dados

@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { LojaController } from "../../controller/Loja/LojaController";
 import { authenticateJWT } from "../../middleware/auth.middleware";
+import { requireActiveUser } from "../../middleware/active.middleware";
 import { requireAdmin } from "../../middleware/admin.middleware";
 
 
@@ -11,6 +12,7 @@ const lojaController = new LojaController();
 
 // Todas as rotas de loja requerem autenticação
 router.use(authenticateJWT);
+router.use(requireActiveUser);
 
 
 // Criar nova loja (apenas ADMIN_EMPRESA)

@@ -241,17 +241,24 @@ export class FaturaService {
     const [faturas, total] = await Promise.all([
       prismaClient.fatura.findMany({
         where,
-        include: {
+        select: {
+          id: true,
+          mesReferencia: true,
+          anoReferencia: true,
+          valorAluguel: true,
+          dataVencimento: true,
+          status: true,
           contrato: {
-            include: {
-              loja: true,
+            select: {
+              loja: {
+                select: {
+                  nome: true,
+                  numero: true,
+                }
+              },
               inquilino: {
                 select: {
-                  id: true,
                   nome: true,
-                  email: true,
-                  telefone: true,
-                  cpf: true,
                 }
               }
             }
@@ -267,8 +274,30 @@ export class FaturaService {
       prismaClient.fatura.count({ where })
     ]);
 
+    // Formatar os dados para uma estrutura mais limpa
+    const faturasFormatadas = faturas.map(fatura => {
+      const hoje = new Date();
+      const estaVencida = fatura.dataVencimento < hoje && fatura.status !== StatusFatura.PAGA;
+      
+      return {
+        id: fatura.id,
+        referencia: `${String(fatura.mesReferencia).padStart(2, '0')}/${fatura.anoReferencia}`,
+        valor: fatura.valorAluguel,
+        valorFormatado: new Intl.NumberFormat('pt-BR', {
+          style: 'currency',
+          currency: 'BRL'
+        }).format(fatura.valorAluguel),
+        dataVencimento: fatura.dataVencimento,
+        status: fatura.status,
+        statusDescricao: this.obterDescricaoStatus(fatura.status),
+        estaVencida,
+        loja: `${fatura.contrato.loja.nome} - ${fatura.contrato.loja.numero}`,
+        inquilino: fatura.contrato.inquilino.nome,
+      };
+    });
+
     return {
-      faturas,
+      faturas: faturasFormatadas,
       total,
       page,
       limit,
@@ -309,5 +338,105 @@ export class FaturaService {
         }
       }
     });
+  }
+
+  /**
+   * Busca detalhes completos da fatura com informações relevantes
+   */
+  async buscarDetalhesCompletos(faturaId: string) {
+    const fatura = await prismaClient.fatura.findUnique({
+      where: { id: faturaId },
+      select: {
+        id: true,
+        mesReferencia: true,
+        anoReferencia: true,
+        valorAluguel: true,
+        dataVencimento: true,
+        status: true,
+        contrato: {
+          select: {
+            valorAluguel: true,
+            dataInicio: true,
+            dataFim: true,
+            status: true,
+            loja: {
+              select: {
+                nome: true,
+                numero: true,
+                localizacao: true,
+                empresa: {
+                  select: {
+                    nome: true,
+                  }
+                }
+              }
+            },
+            inquilino: {
+              select: {
+                nome: true,
+                email: true,
+              }
+            }
+          }
+        }
+      }
+    });
+
+    if (!fatura) {
+      return null;
+    }
+
+    // Calcular informações essenciais
+    const hoje = new Date();
+    const diasParaVencimento = Math.ceil((fatura.dataVencimento.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
+    const diasEmAtraso = diasParaVencimento < 0 ? Math.abs(diasParaVencimento) : 0;
+    const estaVencida = fatura.dataVencimento < hoje && fatura.status !== StatusFatura.PAGA;
+
+    return {
+      fatura: {
+        id: fatura.id,
+        referencia: `${String(fatura.mesReferencia).padStart(2, '0')}/${fatura.anoReferencia}`,
+        valor: fatura.valorAluguel,
+        valorFormatado: new Intl.NumberFormat('pt-BR', {
+          style: 'currency',
+          currency: 'BRL'
+        }).format(fatura.valorAluguel),
+        dataVencimento: fatura.dataVencimento,
+        status: fatura.status,
+        statusDescricao: this.obterDescricaoStatus(fatura.status),
+        estaVencida,
+        diasParaVencimento: diasParaVencimento > 0 ? diasParaVencimento : null,
+        diasEmAtraso: estaVencida ? diasEmAtraso : null,
+      },
+      loja: {
+        nome: fatura.contrato.loja.nome,
+        numero: fatura.contrato.loja.numero,
+        localizacao: fatura.contrato.loja.localizacao,
+        empresa: fatura.contrato.loja.empresa.nome,
+      },
+      inquilino: {
+        nome: fatura.contrato.inquilino.nome,
+        email: fatura.contrato.inquilino.email,
+      },
+      contrato: {
+        valorAluguel: fatura.contrato.valorAluguel,
+        dataInicio: fatura.contrato.dataInicio,
+        dataFim: fatura.contrato.dataFim,
+        status: fatura.contrato.status,
+      }
+    };
+  }
+
+  /**
+   * Obtém descrição amigável do status da fatura
+   */
+  private obterDescricaoStatus(status: StatusFatura): string {
+    const descricoes = {
+      [StatusFatura.PENDENTE]: 'Aguardando pagamento',
+      [StatusFatura.PAGA]: 'Paga',
+      [StatusFatura.VENCIDA]: 'Vencida',
+      [StatusFatura.CANCELADA]: 'Cancelada'
+    };
+    return descricoes[status] || status;
   }
 }

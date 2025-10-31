@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { UsuarioController } from "../../controller/Usuario/UsuarioController";
 import { authenticateJWT } from "../../middleware/auth.middleware";
+import { requireActiveUser } from "../../middleware/active.middleware";
 
 
 const router = Router();
@@ -14,11 +15,17 @@ router.post("/solicitar-redefinicao-senha", usuarioController.solicitarRedefinic
 
 
 // Rotas protegidas
-router.post("/criar-inquilino", authenticateJWT, usuarioController.createTenant);
-router.get("/empresa/usuarios", authenticateJWT, usuarioController.listarUsuariosDaEmpresa);
-router.get("/inquilinos", authenticateJWT, usuarioController.listarInquilinos);
-router.get("/id/:id", authenticateJWT, usuarioController.buscarPorId);
-router.post("/redefinir-senha", authenticateJWT,usuarioController.redefinirSenha);
+router.post("/criar-inquilino", authenticateJWT, requireActiveUser, usuarioController.createTenant);
+router.get("/empresa/usuarios", authenticateJWT, requireActiveUser, usuarioController.listarUsuariosDaEmpresa);
+router.get("/inquilinos", authenticateJWT, requireActiveUser, usuarioController.listarInquilinos);
+router.get("/id/:id", authenticateJWT, requireActiveUser, usuarioController.buscarPorId);
+router.post("/redefinir-senha", authenticateJWT, requireActiveUser, usuarioController.redefinirSenha);
+
+// Desativar usuário (apenas usuários autenticados; controle de permissão no service)
+router.patch("/desativar/:id", authenticateJWT, requireActiveUser, usuarioController.desativarUsuario);
+
+// Ativar usuário (apenas usuários autenticados; controle de permissão no service)
+router.patch("/ativar/:id", authenticateJWT, requireActiveUser, usuarioController.ativarUsuario);
 
 
 export default router;

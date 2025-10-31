@@ -146,4 +146,34 @@ export class FaturaController {
       });
     }
   }
+
+  /**
+   * Busca detalhes completos da fatura
+   * GET /fatura/:id/detalhes
+   */
+  async buscarDetalhesCompletos(req: Request, res: Response) {
+    try {
+      const { id } = faturaIdSchema.parse(req.params);
+      
+      const detalhes = await this.faturaService.buscarDetalhesCompletos(id);
+      
+      if (!detalhes) {
+        return res.status(404).json({
+          erro: "Fatura não encontrada",
+          detalhes: "A fatura com o ID fornecido não foi encontrada"
+        });
+      }
+      
+      return res.status(200).json({
+        ...SUCESSO.BUSCA_SUCESSO,
+        data: detalhes
+      });
+    } catch (error: any) {
+      console.error("Erro ao buscar detalhes da fatura:", error);
+      return res.status(500).json({
+        erro: "Erro interno do servidor",
+        detalhes: error.message
+      });
+    }
+  }
 }

@@ -38,6 +38,56 @@ export class UsuarioService {
     return { usuario, empresa, token };
   }
 
+  async desativarUsuario(usuarioId: string, usuarioLogadoId: string) {
+    const usuarioLogado = await usuarioModel.buscarPorId(usuarioLogadoId);
+    if (!usuarioLogado) {
+      throw new ApiError(404, "Usuário logado não encontrado");
+    }
+
+    // Apenas ADMIN_EMPRESA pode desativar
+    if (usuarioLogado.tipo !== "ADMIN_EMPRESA") {
+      throw new ApiError(403, "Apenas administradores da empresa podem desativar usuários");
+    }
+
+    const usuarioAlvo = await usuarioModel.buscarPorId(usuarioId);
+    if (!usuarioAlvo) {
+      throw new ApiError(404, "Usuário alvo não encontrado");
+    }
+
+    // Verificar se pertence à mesma empresa
+    if (usuarioAlvo.empresaId !== usuarioLogado.empresaId) {
+      throw new ApiError(403, "Você só pode desativar usuários da sua empresa");
+    }
+
+    const usuarioAtualizado = await usuarioModel.desativarUsuario(usuarioId);
+    return usuarioAtualizado;
+  }
+
+  async ativarUsuario(usuarioId: string, usuarioLogadoId: string) {
+    const usuarioLogado = await usuarioModel.buscarPorId(usuarioLogadoId);
+    if (!usuarioLogado) {
+      throw new ApiError(404, "Usuário logado não encontrado");
+    }
+
+    // Apenas ADMIN_EMPRESA pode ativar
+    if (usuarioLogado.tipo !== "ADMIN_EMPRESA") {
+      throw new ApiError(403, "Apenas administradores da empresa podem ativar usuários");
+    }
+
+    const usuarioAlvo = await usuarioModel.buscarPorId(usuarioId);
+    if (!usuarioAlvo) {
+      throw new ApiError(404, "Usuário alvo não encontrado");
+    }
+
+    // Verificar se pertence à mesma empresa
+    if (usuarioAlvo.empresaId !== usuarioLogado.empresaId) {
+      throw new ApiError(403, "Você só pode ativar usuários da sua empresa");
+    }
+
+    const usuarioAtualizado = await usuarioModel.ativarUsuario(usuarioId);
+    return usuarioAtualizado;
+  }
+
   async criarUsuario(data: ICriarUsuario, usuarioLogadoId: string) {
     // Verificar se o usuário logado pertence à mesma empresa
     const usuarioLogado = await usuarioModel.buscarPorId(usuarioLogadoId);
@@ -99,6 +149,10 @@ export class UsuarioService {
     if (!usuario) {
       throw new ApiError(401, "Usuário ou senha inválidos");
     }
+
+    if (usuario.ativo === false) {
+      throw new ApiError(403, "Usuário desativado. Contate o administrador.");
+    }
     
     const senhaValida = await bcrypt.compare(data.senha, usuario.senha);
     if (!senhaValida) {
@@ -125,6 +179,10 @@ export class UsuarioService {
 
     if (!usuario) {
       throw new ApiError(401, "Usuário ou senha inválidos");
+    }
+
+    if (usuario.ativo === false) {
+      throw new ApiError(403, "Usuário desativado. Contate o administrador.");
     }
     
     // Verificar se o usuário é do tipo INQUILINO
