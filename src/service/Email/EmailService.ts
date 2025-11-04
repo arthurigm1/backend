@@ -26,7 +26,7 @@ export class EmailService {
   async enviarEmailRedefinicaoSenha(email: string, nome: string, token: string): Promise<void> {
     try {
 
-      const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/redefinir-senha?token=${token}`;
+      const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:4200'}/redefinir-senha?token=${token}`;
 
       const mailOptions = {
         from: process.env.GMAIL_USER,

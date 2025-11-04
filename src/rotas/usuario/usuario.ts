@@ -12,6 +12,7 @@ router.post("/registro", usuarioController.createWithCompany);
 router.post("/login", usuarioController.login);
 router.post("/login-inquilino", usuarioController.loginInquilino);
 router.post("/solicitar-redefinicao-senha", usuarioController.solicitarRedefinicaoSenha);
+router.post("/validar-redefinicao-senha", usuarioController.redefinirSenha);
 
 
 // Rotas protegidas

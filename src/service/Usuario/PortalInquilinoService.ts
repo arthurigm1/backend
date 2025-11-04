@@ -58,7 +58,10 @@ export class PortalInquilinoService {
       
       // Buscar notificações
       prismaClient.notificacao.findMany({
-        where: { usuarioId: inquilinoId },
+        where: { 
+          usuarioId: inquilinoId,
+          lida: false
+        },
         orderBy: { enviadaEm: 'desc' },
         take: 20 // Limitar a 20 notificações mais recentes
       })

@@ -42,6 +42,7 @@ model Loja {
   nome        String
   numero      String
   localizacao String
+  m2          Float?
   status      StatusLoja
   empresaId   String
   usuarioId   String?

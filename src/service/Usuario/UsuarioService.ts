@@ -206,7 +206,12 @@ export class UsuarioService {
     return { usuario: usuarioSemSenha, token };
   }
 
-  async listarUsuariosDaEmpresa(usuarioLogadoId: string, page: number = 1, limit: number = 10) {
+  async listarUsuariosDaEmpresa(
+    usuarioLogadoId: string,
+    page: number = 1,
+    limit: number = 10,
+    filtros?: { q?: string; nome?: string; email?: string }
+  ) {
     
     const usuarioLogado = await usuarioModel.buscarPorId(usuarioLogadoId);
     if (!usuarioLogado) {
@@ -216,7 +221,12 @@ export class UsuarioService {
       throw new ApiError(403, "Voce não tem permissao para visualizar lojas");
     }
 
-    const resultado = await usuarioModel.listarUsuariosDaEmpresa(usuarioLogado.empresaId, page, limit);
+    const resultado = await usuarioModel.listarUsuariosDaEmpresa(
+      usuarioLogado.empresaId,
+      page,
+      limit,
+      filtros
+    );
     return resultado;
   }
 

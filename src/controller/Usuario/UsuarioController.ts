@@ -124,6 +124,10 @@ export class UsuarioController {
       // Parâmetros de paginação
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 10;
+      // Filtros de busca
+      const q = (req.query.q as string) || undefined;
+      const nome = (req.query.nome as string) || undefined;
+      const email = (req.query.email as string) || undefined;
       
       // Validar parâmetros
       if (page < 1) {
@@ -133,7 +137,12 @@ export class UsuarioController {
         return res.status(400).json({ error: "Limite deve estar entre 1 e 100" });
       }
       
-      const resultado = await usuarioService.listarUsuariosDaEmpresa(usuarioLogadoId, page, limit);
+      const resultado = await usuarioService.listarUsuariosDaEmpresa(
+        usuarioLogadoId,
+        page,
+        limit,
+        { q, nome, email }
+      );
       return res.status(200).json({
         sucesso: true,
         usuarios: resultado.usuarios,

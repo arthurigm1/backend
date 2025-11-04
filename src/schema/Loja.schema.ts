@@ -6,6 +6,7 @@ export const criarLojaSchema = z.object({
   nome: z.string().min(1, "Nome da loja é obrigatório"),
   numero: z.string().min(1, "Número da loja é obrigatório"),
   localizacao: z.string().min(1, "Localização é obrigatória"),
+  m2: z.number().positive("m2 deve ser um número positivo").optional(),
   status: statusLojaEnum.default('VAGA'),
 });
 
@@ -26,6 +27,7 @@ export const editarLojaSchema = z.object({
   nome: z.string().min(1, "Nome da loja é obrigatório").optional(),
   numero: z.string().min(1, "Número da loja é obrigatório").optional(),
   localizacao: z.string().min(1, "Localização é obrigatória").optional(),
+  m2: z.number().positive("m2 deve ser um número positivo").optional(),
   status: statusLojaEnum.optional(),
   vincularInquilino: z.object({
     inquilinoId: z.string().min(1, "ID do inquilino é obrigatório"),

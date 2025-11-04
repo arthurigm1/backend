@@ -10,6 +10,7 @@ export class LojaModel {
         nome: dados.nome,
         numero: dados.numero,
         localizacao: dados.localizacao,
+        m2: dados.m2,
         status: dados.status,
         empresaId: dados.empresaId,
       },
@@ -233,6 +234,7 @@ async listarLojas(empresaId: string, filtros: any, page: number, limit: number) 
     if (dados.nome !== undefined) updateData.nome = dados.nome;
     if (dados.numero !== undefined) updateData.numero = dados.numero;
     if (dados.localizacao !== undefined) updateData.localizacao = dados.localizacao;
+    if (dados.m2 !== undefined) updateData.m2 = dados.m2;
     if (dados.status !== undefined) updateData.status = dados.status;
 
 
