@@ -210,7 +210,7 @@ export class UsuarioService {
     usuarioLogadoId: string,
     page: number = 1,
     limit: number = 10,
-    filtros?: { q?: string; nome?: string; email?: string }
+    filtros?: { q?: string; nome?: string; email?: string; tipo?: string; ativo?: boolean }
   ) {
     
     const usuarioLogado = await usuarioModel.buscarPorId(usuarioLogadoId);

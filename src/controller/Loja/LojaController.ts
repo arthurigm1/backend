@@ -68,6 +68,11 @@ async listarLojas(req: Request, res: Response): Promise<Response> {
     return res.status(200).json({
       sucesso: true,
       lojas: resultado.lojas,
+      totais: {
+        ocupadas: resultado.totalOcupadas,
+        vagas: resultado.totalVagas,
+        inativas: resultado.totalInativas,
+      },
       paginacao: {
         paginaAtual: page,
         limitePorPagina: limit,

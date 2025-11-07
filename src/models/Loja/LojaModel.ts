@@ -190,10 +190,23 @@ async listarLojas(empresaId: string, filtros: any, page: number, limit: number) 
     // Calcular total de páginas
     const totalPaginas = totalLojas > 0 ? Math.ceil(totalLojas / limit) : 0;
 
+    // Totais por status (ignorando filtro de status para dar visão geral)
+    const baseWhere: any = { ...whereClause };
+    delete baseWhere.status;
+
+    const [totalOcupadas, totalVagas, totalInativas] = await Promise.all([
+      prismaClient.loja.count({ where: { ...baseWhere, status: 'OCUPADA' } }),
+      prismaClient.loja.count({ where: { ...baseWhere, status: 'VAGA' } }),
+      prismaClient.loja.count({ where: { ...baseWhere, status: 'INATIVA' } }),
+    ]);
+
     return {
       lojas,
       totalLojas,
       totalPaginas,
+      totalOcupadas,
+      totalVagas,
+      totalInativas,
     };
   } catch (error) {
     console.error('Erro ao listar lojas:', error);

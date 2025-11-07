@@ -107,31 +107,44 @@ async login(email: string) {
     empresaId: string,
     page: number = 1,
     limit: number = 10,
-    filtros?: { q?: string; nome?: string; email?: string }
+    filtros?: { q?: string; nome?: string; email?: string; tipo?: string; ativo?: boolean }
   ) {
     const skip = (page - 1) * limit;
 
     const where: any = { empresaId };
     const andConditions: any[] = [];
 
-    if (filtros?.q) {
-      const q = filtros.q;
+    const q = filtros?.q?.trim();
+    const nome = filtros?.nome?.trim();
+    const email = filtros?.email?.trim();
+    const tipo = filtros?.tipo?.trim();
+    const ativo = filtros?.ativo;
+
+    if (q && q.length > 0) {
       where.OR = [
-        { nome: { contains: q } },
-        { email: { contains: q } },
+        { nome: { contains: q, mode: 'insensitive' } },
+        { email: { contains: q, mode: 'insensitive' } },
       ];
     }
 
-    if (filtros?.nome) {
-      andConditions.push({ nome: { contains: filtros.nome } });
+    if (nome && nome.length > 0) {
+      andConditions.push({ nome: { contains: nome, mode: 'insensitive' } });
     }
 
-    if (filtros?.email) {
-      andConditions.push({ email: { contains: filtros.email } });
+    if (email && email.length > 0) {
+      andConditions.push({ email: { contains: email, mode: 'insensitive' } });
+    }
+
+    if (tipo && tipo.length > 0) {
+      where.tipo = tipo.toUpperCase();
     }
 
     if (andConditions.length > 0) {
       where.AND = andConditions;
+    }
+
+    if (typeof ativo === 'boolean') {
+      where.ativo = ativo;
     }
 
     // Buscar usuários com paginação

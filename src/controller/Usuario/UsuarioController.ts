@@ -128,6 +128,15 @@ export class UsuarioController {
       const q = (req.query.q as string) || undefined;
       const nome = (req.query.nome as string) || undefined;
       const email = (req.query.email as string) || undefined;
+      const tipo = (req.query.tipo as string) || undefined; // ADMIN_EMPRESA, FUNCIONARIO, INQUILINO, VISITANTE
+      // Filtro de ativo/inativo
+      const ativoParam = (req.query.ativo as string) || undefined;
+      let ativo: boolean | undefined = undefined;
+      if (ativoParam) {
+        const v = ativoParam.toString().toLowerCase();
+        if (["true", "1", "ativo"].includes(v)) ativo = true;
+        else if (["false", "0", "inativo"].includes(v)) ativo = false;
+      }
       
       // Validar parâmetros
       if (page < 1) {
@@ -141,7 +150,7 @@ export class UsuarioController {
         usuarioLogadoId,
         page,
         limit,
-        { q, nome, email }
+        { q, nome, email, tipo, ativo }
       );
       return res.status(200).json({
         sucesso: true,
