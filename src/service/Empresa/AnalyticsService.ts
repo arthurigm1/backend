@@ -1,5 +1,5 @@
 import prismaClient from "../../prisma/PrismaClient";
-import { StatusFatura } from "../../generated/prisma";
+import { StatusFatura, StatusLoja, TipoUsuario } from "../../generated/prisma";
 
 export interface PeriodoFiltro {
   inicio?: Date;
@@ -28,6 +28,21 @@ export class AnalyticsService {
         }
       }
     });
+
+    // Contagens de lojas e inquilinos
+    const [
+      totalLojas,
+      lojasOcupadas,
+      lojasVagas,
+      lojasInativas,
+      totalInquilinos
+    ] = await Promise.all([
+      prismaClient.loja.count({ where: { empresaId } }),
+      prismaClient.loja.count({ where: { empresaId, status: StatusLoja.OCUPADA } }),
+      prismaClient.loja.count({ where: { empresaId, status: StatusLoja.VAGA } }),
+      prismaClient.loja.count({ where: { empresaId, status: StatusLoja.INATIVA } }),
+      prismaClient.usuario.count({ where: { empresaId, tipo: TipoUsuario.INQUILINO } }),
+    ]);
 
     // Totais por status
     const porStatus = {
@@ -82,6 +97,27 @@ export class AnalyticsService {
       .map(([mes, valor]) => ({ mes, valor }))
       .sort((a, b) => a.mes.localeCompare(b.mes));
 
+    // Receita mensal atual (pagas no mês corrente)
+    const receitaMensalAtual = porStatus.pagas
+      .filter(f => {
+        const d = f.atualizadoEm || f.dataVencimento;
+        return d.getFullYear() === hoje.getFullYear() && d.getMonth() === hoje.getMonth();
+      })
+      .reduce((acc, f) => acc + (f.valorAluguel || 0), 0);
+
+    // Receita total (todas pagas)
+    const receitaTotal = somaValor(porStatus.pagas);
+
+    // Taxas
+    const baseOcupacao = lojasOcupadas + lojasVagas;
+    const taxaOcupacao = baseOcupacao > 0 ? (lojasOcupadas / baseOcupacao) : 0;
+    const inadimplentesCount = mapaInadimplentes.size;
+    const taxaInadimplencia = totalInquilinos > 0 ? (inadimplentesCount / totalInquilinos) : 0;
+
+    // Valores pendentes e vencidos
+    const valorPendentes = somaValor(porStatus.pendentes);
+    const valorVencidas = somaValor(porStatus.vencidas);
+
     // Controle de caixa no período
     const dentroPeriodo = (d?: Date) => {
       if (!d) return false;
@@ -99,6 +135,28 @@ export class AnalyticsService {
       .reduce((acc, f) => acc + (f.valorAluguel || 0), 0);
 
     return {
+      resumo: {
+        receitaTotal,
+        receitaMensal: receitaMensalAtual,
+        propriedades: {
+          total: totalLojas,
+          ocupadas: lojasOcupadas,
+          vagas: lojasVagas,
+          inativas: lojasInativas,
+          taxaOcupacao,
+        },
+        inquilinos: {
+          total: totalInquilinos,
+          inadimplentes: inadimplentesCount,
+          taxaInadimplencia,
+        },
+        pendencias: {
+          faturasPendentes: porStatus.pendentes.length,
+          valorPendentes,
+          faturasVencidas: porStatus.vencidas.length,
+          valorVencidas,
+        },
+      },
       totals: {
         faturas: {
           pendentes: { quantidade: porStatus.pendentes.length, valor: somaValor(porStatus.pendentes) },
@@ -112,6 +170,13 @@ export class AnalyticsService {
         valorTotalEmAtraso,
         topInadimplentes,
       },
+      lojas: {
+        porStatus: [
+          { status: StatusLoja.OCUPADA, quantidade: lojasOcupadas },
+          { status: StatusLoja.VAGA, quantidade: lojasVagas },
+          { status: StatusLoja.INATIVA, quantidade: lojasInativas },
+        ],
+      },
       caixa: {
         periodo: {
           inicio: inicio?.toISOString(),
@@ -123,6 +188,11 @@ export class AnalyticsService {
       series: {
         recebimentosPorMes,
         aReceberPorMes,
+        ocupacaoPorStatus: [
+          { status: "OCUPADA", quantidade: lojasOcupadas },
+          { status: "VAGA", quantidade: lojasVagas },
+          { status: "INATIVA", quantidade: lojasInativas },
+        ],
       },
     };
   }
