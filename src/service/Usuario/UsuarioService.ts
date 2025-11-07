@@ -317,4 +317,25 @@ export class UsuarioService {
     const inquilinos = await usuarioModel.listarInquilinosDaEmpresa(empresaId);
     return inquilinos;
   }
+
+async alterarSenhaComSenhaAtual(usuarioLogadoId: string, senhaAtual: string, novaSenha: string) {
+    const usuario = await usuarioModel.buscarPorIdComSenha(usuarioLogadoId);
+    console.log("usuario:", usuario);
+    if (!usuario) {
+      throw new ApiError(404, "Usuário não encontrado");
+    }
+    
+    const senhaValida = await bcrypt.compare(senhaAtual, usuario.senha);
+    console.log("senhaValida:", senhaValida);
+    if (!senhaValida) {
+      throw new ApiError(401, "Senha atual incorreta");
+    }
+
+    if (senhaAtual.length < 6) {
+      throw new ApiError(400, "A nova senha deve ter pelo menos 6 caracteres");
+    }
+
+    await usuarioModel.atualizarSenha(usuario.id, novaSenha);
+    return { sucesso: true, mensagem: "Senha alterada com sucesso" };
+}
 }

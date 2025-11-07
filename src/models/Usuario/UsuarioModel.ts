@@ -103,6 +103,20 @@ async login(email: string) {
     });
   }
 
+  async buscarPorIdComSenha(id: string) {
+    return await prismaClient.usuario.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        nome: true,
+        email: true,
+        senha: true,
+        tipo: true,
+        empresaId: true,
+      },
+    });
+  }
+
   async listarUsuariosDaEmpresa(
     empresaId: string,
     page: number = 1,

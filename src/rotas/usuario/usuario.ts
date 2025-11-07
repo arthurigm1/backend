@@ -20,7 +20,7 @@ router.post("/criar-inquilino", authenticateJWT, requireActiveUser, usuarioContr
 router.get("/empresa/usuarios", authenticateJWT, requireActiveUser, usuarioController.listarUsuariosDaEmpresa);
 router.get("/inquilinos", authenticateJWT, requireActiveUser, usuarioController.listarInquilinos);
 router.get("/id/:id", authenticateJWT, requireActiveUser, usuarioController.buscarPorId);
-router.post("/redefinir-senha", authenticateJWT, requireActiveUser, usuarioController.redefinirSenha);
+router.post("/redefinir-senha", authenticateJWT, requireActiveUser, usuarioController.alterarSenha);
 
 // Desativar usuário (apenas usuários autenticados; controle de permissão no service)
 router.patch("/desativar/:id", authenticateJWT, requireActiveUser, usuarioController.desativarUsuario);

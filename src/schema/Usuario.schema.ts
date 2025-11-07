@@ -49,3 +49,12 @@ export const redefinirSenhaSchema = z.object({
     .nonempty({ message: "Nova senha é obrigatória!" })
     .min(6, { message: "Nova senha deve ter no mínimo 6 caracteres" }),
 });
+
+export const alterarSenhaSchema = z.object({
+  senhaAtual: string()
+    .nonempty({ message: "Senha atual é obrigatória!" })
+    .min(6, { message: "Senha atual deve ter no mínimo 6 caracteres" }),
+  novaSenha: string()
+    .nonempty({ message: "Nova senha é obrigatória!" })
+    .min(6, { message: "Nova senha deve ter no mínimo 6 caracteres" }),
+});

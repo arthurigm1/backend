@@ -6,6 +6,7 @@ import {
   loginUsuarioSchema,
   solicitarRedefinicaoSenhaSchema,
   redefinirSenhaSchema,
+  alterarSenhaSchema,
 } from "../../schema/Usuario.schema";
 import { UsuarioService } from "../../service/Usuario/UsuarioService";
 import { MENSAGEM_SUCESSO_USER_CRIADO } from "../../constants/sucesso";
@@ -216,16 +217,47 @@ export class UsuarioController {
     }
   }
 
+  async alterarSenha(req: Request, res: Response): Promise<Response> {
+    try {
+      const usuarioId = req.user?.id;
+      if (!usuarioId) {
+        return res.status(401).json({ error: "Usuário não autenticado" });
+      }
+
+      const validAlteracao = alterarSenhaSchema.safeParse({
+        senhaAtual: req.body?.senhaAtual,
+        novaSenha: req.body?.novaSenha,
+      });
+      if (!validAlteracao.success) {
+        return res.status(400).json({
+          error: "Dados inválidos",
+          details: validAlteracao.error.errors,
+        });
+      }
+    
+      const resultado = await usuarioService.alterarSenhaComSenhaAtual(
+        usuarioId,
+        validAlteracao.data.senhaAtual,
+        validAlteracao.data.novaSenha
+      );
+      return res.status(200).json(resultado);
+    } catch (error: any) {
+      return res.status(error.statusCode || 400).json({ 
+        error: error.message || "Erro ao alterar senha" 
+      });
+    }
+  }
+
   async redefinirSenha(req: Request, res: Response): Promise<Response> {
     try {
       const dadosValidados = redefinirSenhaSchema.safeParse(req.body);
       if (!dadosValidados.success) {
-        return res.status(400).json({ 
+        return res.status(400).json({
           error: "Dados inválidos",
-          details: dadosValidados.error.errors 
+          details: dadosValidados.error.errors,
         });
       }
-      
+
       const resultado = await usuarioService.redefinirSenha(dadosValidados.data);
       return res.status(200).json(resultado);
     } catch (error: any) {
