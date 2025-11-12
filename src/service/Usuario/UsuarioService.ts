@@ -302,7 +302,13 @@ export class UsuarioService {
     };
   }
 
-  async listarInquilinos(empresaId: string, usuarioLogadoId: string) {
+  async listarInquilinos(
+    empresaId: string,
+    usuarioLogadoId: string,
+    page: number = 1,
+    limit: number = 10,
+    filtros?: { q?: string; nome?: string; email?: string; ativo?: boolean }
+  ) {
     // Verificar se o usuário logado existe e pertence à empresa
     const usuarioLogado = await usuarioModel.buscarPorId(usuarioLogadoId);
     if (!usuarioLogado) {
@@ -313,9 +319,14 @@ export class UsuarioService {
       throw new ApiError(403, "Você não tem permissão para listar inquilinos desta empresa");
     }
 
-    // Listar apenas inquilinos da empresa
-    const inquilinos = await usuarioModel.listarInquilinosDaEmpresa(empresaId);
-    return inquilinos;
+    // Reutiliza a query de usuários com filtros, forçando tipo INQUILINO
+    const resultado = await usuarioModel.listarUsuariosDaEmpresa(
+      empresaId,
+      page,
+      limit,
+      { ...(filtros || {}), tipo: 'INQUILINO' }
+    );
+    return resultado;
   }
 
 async alterarSenhaComSenhaAtual(usuarioLogadoId: string, senhaAtual: string, novaSenha: string) {

@@ -45,6 +45,14 @@ router.get("/contrato/:contratoId", faturaController.listarFaturasPorContrato.bi
 router.get("/detalhes/:id", faturaController.buscarDetalhesCompletos.bind(faturaController));
 
 /**
+ * @route POST /fatura/:id/enviar-email
+ * @desc Envia a fatura do inquilino por email (PIX/Boleto)
+ * @param id - ID da fatura
+ * @example POST /fatura/123e4567-e89b-12d3-a456-426614174000/enviar-email
+ */
+router.post("/:id/enviar-email", faturaController.enviarFaturaPorEmail.bind(faturaController));
+
+/**
  * @route GET /fatura/:id
  * @desc Busca fatura por ID
  * @param id - ID da fatura

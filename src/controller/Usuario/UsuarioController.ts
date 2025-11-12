@@ -275,11 +275,51 @@ export class UsuarioController {
       if (!usuarioId || !empresaId) {
         return res.status(401).json({ error: "Usuário não autenticado" });
       }
+      // Parâmetros de paginação
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 10;
 
-      const inquilinos = await usuarioService.listarInquilinos(empresaId, usuarioId);
+      // Filtros de busca
+      const q = (req.query.q as string) || undefined;
+      const nome = (req.query.nome as string) || undefined;
+      const email = (req.query.email as string) || undefined;
+
+      // Filtro de ativo/inativo
+      const ativoParam = (req.query.ativo as string) || undefined;
+      let ativo: boolean | undefined = undefined;
+      if (ativoParam) {
+        const v = ativoParam.toString().toLowerCase();
+        if (["true", "1", "ativo"].includes(v)) ativo = true;
+        else if (["false", "0", "inativo"].includes(v)) ativo = false;
+      }
+
+      // Validar parâmetros
+      if (page < 1) {
+        return res.status(400).json({ error: "Página deve ser maior que 0" });
+      }
+      if (limit < 1 || limit > 100) {
+        return res.status(400).json({ error: "Limite deve estar entre 1 e 100" });
+      }
+
+      const resultado = await usuarioService.listarInquilinos(
+        empresaId,
+        usuarioId,
+        page,
+        limit,
+        { q, nome, email, ativo }
+      );
+
       return res.status(200).json({
         sucesso: true,
-        inquilinos: inquilinos,
+        inquilinos: resultado.usuarios,
+        paginacao: {
+          paginaAtual: page,
+          totalPaginas: resultado.totalPaginas,
+          totalRegistros: resultado.totalUsuarios,
+          limite: limit,
+          temProximaPagina: page < resultado.totalPaginas,
+          temPaginaAnterior: page > 1,
+        },
       });
     } catch (error: any) {
       return res.status(error.statusCode || 500).json({

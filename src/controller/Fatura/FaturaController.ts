@@ -176,4 +176,28 @@ export class FaturaController {
       });
     }
   }
+
+  /**
+   * Envia a fatura do inquilino por email
+   * POST /fatura/:id/enviar-email
+   */
+  async enviarFaturaPorEmail(req: Request, res: Response) {
+    try {
+      const { id } = faturaIdSchema.parse(req.params);
+
+      const resultado = await this.faturaService.enviarFaturaPorEmail(id);
+
+      return res.status(200).json({
+        sucesso: true,
+        mensagem: "Email de fatura enviado com sucesso",
+        data: resultado
+      });
+    } catch (error: any) {
+      console.error("Erro ao enviar fatura por email:", error);
+      return res.status(500).json({
+        erro: "Erro interno do servidor",
+        detalhes: error.message
+      });
+    }
+  }
 }

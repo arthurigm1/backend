@@ -13,6 +13,7 @@ import {
   IEFICustomer, 
   IEFICustomerAddress 
 } from "../../interface/EFI/EFI";
+import { emailService } from "../../service/Email/EmailService";
 
 const prismaClient = new PrismaClient();
 
@@ -95,7 +96,7 @@ export class ContratoModel {
     }
 
     // Se a cobrança EFI foi criada com sucesso, criar contrato e fatura em transação
-    return await prismaClient.$transaction(async (tx) => {
+    const contratoCriado = await prismaClient.$transaction(async (tx) => {
       // Criar contrato
       const contrato = await tx.contrato.create({
         data: {
@@ -151,6 +152,36 @@ export class ContratoModel {
 
       return contrato;
     });
+
+    // Enviar email de fatura para o inquilino (não bloqueia criação do contrato)
+    try {
+      if (inquilino.email) {
+        await emailService.enviarEmailFatura(
+          inquilino.email,
+          inquilino.nome,
+          loja.nome,
+          proximoMes.getMonth() + 1,
+          proximoMes.getFullYear(),
+          dados.valorAluguel,
+          dataVencimentoFatura,
+          {
+            barcode: cobrancaEFI.data.barcode,
+            pixQrcode: cobrancaEFI.data.pix.qrcode,
+            pixQrcodeImage: cobrancaEFI.data.pix.qrcode_image,
+            link: cobrancaEFI.data.link,
+            billetLink: cobrancaEFI.data.billet_link,
+            pdfLink: cobrancaEFI.data.pdf.charge,
+            expireAt: cobrancaEFI.data.expire_at,
+            status: cobrancaEFI.data.status,
+          }
+        );
+      }
+    } catch (err) {
+      console.error('Falha ao enviar email de fatura ao inquilino:', err);
+      // Sem throw: não impedir criação de contrato por falha de email
+    }
+
+    return contratoCriado;
   }
 
   async buscarPorId(id: string): Promise<IContratoComRelacoes | null> {

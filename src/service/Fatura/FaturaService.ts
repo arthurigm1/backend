@@ -6,6 +6,7 @@ import {
   IEFICustomer, 
   IEFICustomerAddress 
 } from "../../interface/EFI/EFI";
+import { emailService } from "../Email/EmailService";
 
 
 export interface IGerarFaturasMensais {
@@ -205,6 +206,62 @@ export class FaturaService {
     // Aplicar reajuste composto
     const fatorReajuste = Math.pow(1 + (contrato.percentualReajuste / 100), anosDecorridos);
     return contrato.valorAluguel * fatorReajuste;
+  }
+
+  /**
+   * Envia a fatura do inquilino por email, incluindo dados de pagamento (PIX/Boleto) se disponíveis
+   */
+  async enviarFaturaPorEmail(faturaId: string): Promise<{ enviado: boolean; destinatario?: string }> {
+    // Buscar fatura com relacionamento necessário
+    const fatura = await prismaClient.fatura.findUnique({
+      where: { id: faturaId },
+      include: {
+        contrato: {
+          include: {
+            loja: { select: { nome: true } },
+            inquilino: { select: { nome: true, email: true } }
+          }
+        },
+        efiCobranca: true
+      }
+    });
+
+    if (!fatura) {
+      throw new Error("Fatura não encontrada");
+    }
+
+    const destinatario = fatura.contrato.inquilino?.email;
+    const nomeInquilino = fatura.contrato.inquilino?.nome || "Inquilino";
+    const lojaNome = fatura.contrato.loja?.nome || "Loja";
+
+    if (!destinatario) {
+      throw new Error("Inquilino sem email cadastrado");
+    }
+
+    // Montar dados de cobrança (se existir EFICobranca associada)
+    const cobranca = {
+      barcode: fatura.efiCobranca?.barcode || undefined,
+      pixQrcode: fatura.efiCobranca?.pixQrcode || undefined,
+      pixQrcodeImage: fatura.efiCobranca?.pixQrcodeImage || undefined,
+      link: fatura.efiCobranca?.link || undefined,
+      billetLink: fatura.efiCobranca?.billetLink || undefined,
+      pdfLink: fatura.efiCobranca?.pdfLink || undefined,
+      expireAt: fatura.efiCobranca?.expireAt || undefined,
+      status: fatura.efiCobranca?.status || undefined,
+    };
+
+    await emailService.enviarEmailFatura(
+      destinatario,
+      nomeInquilino,
+      lojaNome,
+      fatura.mesReferencia,
+      fatura.anoReferencia,
+      fatura.valorAluguel,
+      fatura.dataVencimento,
+      cobranca
+    );
+
+    return { enviado: true, destinatario };
   }
 
   /**

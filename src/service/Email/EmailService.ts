@@ -70,6 +70,83 @@ export class EmailService {
     }
   }
 
+  async enviarEmailFatura(
+    email: string,
+    nome: string,
+    lojaNome: string,
+    mesReferencia: number,
+    anoReferencia: number,
+    valorAluguel: number,
+    dataVencimento: Date,
+    cobranca: {
+      barcode?: string;
+      pixQrcode?: string;
+      pixQrcodeImage?: string;
+      link?: string;
+      billetLink?: string;
+      pdfLink?: string;
+      expireAt?: string | Date;
+      status?: string;
+    }
+  ): Promise<void> {
+    try {
+      const valorFormatado = valorAluguel.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+      const vencimentoFormatado = new Date(dataVencimento).toLocaleDateString('pt-BR');
+
+      const pixSection = cobranca.pixQrcode || cobranca.pixQrcodeImage ? `
+        <div style="margin-top: 20px;">
+          <h3 style="color: #333;">Pagamento via PIX</h3>
+          ${cobranca.pixQrcode ? `<p style="font-size: 12px; color: #555;">Copie e cole o código PIX abaixo no seu aplicativo bancário:</p>
+          <pre style="white-space: pre-wrap; word-break: break-all; background: #f7f7f7; padding: 12px; border-radius: 6px;">${cobranca.pixQrcode}</pre>` : ''}
+          ${cobranca.pixQrcodeImage ? `<p style="font-size: 12px; color: #555;">Ou escaneie o QR Code:</p>
+          <img src="${cobranca.pixQrcodeImage}" alt="QR Code PIX" style="max-width: 240px; border: 1px solid #eee; border-radius: 6px;"/>` : ''}
+        </div>
+      ` : '';
+
+      const boletoSection = cobranca.barcode || cobranca.billetLink || cobranca.pdfLink ? `
+        <div style="margin-top: 20px;">
+          <h3 style="color: #333;">Pagamento via Boleto</h3>
+          ${cobranca.barcode ? `<p style="font-size: 12px; color: #555;">Linha digitável do boleto:</p>
+          <pre style="white-space: pre-wrap; word-break: break-all; background: #f7f7f7; padding: 12px; border-radius: 6px;">${cobranca.barcode}</pre>` : ''}
+          ${cobranca.billetLink ? `<p><a href="${cobranca.billetLink}" style="color: #007bff;">Abrir boleto na web</a></p>` : ''}
+          ${cobranca.pdfLink ? `<p><a href="${cobranca.pdfLink}" style="color: #007bff;">Baixar boleto em PDF</a></p>` : ''}
+        </div>
+      ` : '';
+
+      const cobrancaLink = cobranca.link ? `<p style="margin-top: 12px;"><a href="${cobranca.link}" style="color: #007bff;">Visualizar cobrança completa</a></p>` : '';
+
+      const mailOptions = {
+        from: process.env.GMAIL_USER,
+        to: email,
+        subject: `Fatura criada - ${lojaNome} (${mesReferencia}/${anoReferencia})`,
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 680px; margin: 0 auto; padding: 20px;">
+            <h2 style="color: #333; text-align: center;">Sua Fatura Foi Gerada</h2>
+            <p>Olá <strong>${nome}</strong>,</p>
+            <p>Sua fatura referente ao mês <strong>${mesReferencia}/${anoReferencia}</strong> da loja <strong>${lojaNome}</strong> foi criada.</p>
+            <ul style="list-style: none; padding-left: 0; color: #333;">
+              <li><strong>Valor:</strong> ${valorFormatado}</li>
+              <li><strong>Vencimento:</strong> ${vencimentoFormatado}</li>
+            </ul>
+            ${pixSection}
+            ${boletoSection}
+            ${cobrancaLink}
+            <hr style="margin: 24px 0; border: none; border-top: 1px solid #eee;">
+            <p style="color: #666; font-size: 12px; text-align: center;">
+              Este é um email automático, não responda.
+            </p>
+          </div>
+        `
+      };
+
+      await this.transporter.sendMail(mailOptions);
+      console.log(`Email de fatura criado enviado para: ${email}`);
+    } catch (error) {
+      console.error('Erro ao enviar email de fatura:', error);
+      throw new ApiError(500, 'Erro ao enviar email de fatura');
+    }
+  }
+
   async enviarEmailConfirmacaoRedefinicao(email: string, nome: string): Promise<void> {
     try {
 
