@@ -23,6 +23,8 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 });
 
 app.use(express.json());
+// Necessário para processar notificações da EFI que enviam application/x-www-form-urlencoded
+app.use(express.urlencoded({ extended: true }));
 
 // Routes
 app.use("/api", routes);

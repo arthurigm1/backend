@@ -178,7 +178,13 @@ export class EFIController {
    */
   processarNotificacao = async (req: Request, res: Response): Promise<void> => {
     try {
-      const tokenNotificacao: string | undefined = (req.body?.notification || req.body?.token);
+      // Aceitar token vindo em body (JSON ou form-urlencoded) e também via query
+      const tokenNotificacao: string | undefined = (
+        (req.body?.notification || req.body?.token || req.query?.notification || req.query?.token) as string | undefined
+      );
+      console.log('Webhook EFI content-type:', req.headers['content-type']);
+      console.log('Webhook EFI body recebido:', req.body);
+      console.log('Webhook EFI query params:', req.query);
       if (!tokenNotificacao || typeof tokenNotificacao !== 'string') {
         res.status(400).json({ erro: 'Token de notificação é obrigatório (notification)' });
         return;
