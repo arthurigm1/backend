@@ -179,9 +179,13 @@ export class EFIController {
   processarNotificacao = async (req: Request, res: Response): Promise<void> => {
     try {
       // Aceitar token vindo em body (JSON ou form-urlencoded) e também via query
-      const tokenNotificacao: string | undefined = (
+      let tokenNotificacao: string | undefined = (
         (req.body?.notification || req.body?.token || req.query?.notification || req.query?.token) as string | undefined
       );
+      // Fallback: caso o body seja string (text/plain) contendo apenas o token
+      if (!tokenNotificacao && typeof req.body === 'string') {
+        tokenNotificacao = req.body.trim();
+      }
       console.log('Webhook EFI content-type:', req.headers['content-type']);
       console.log('Webhook EFI body recebido:', req.body);
       console.log('Webhook EFI query params:', req.query);
@@ -191,22 +195,38 @@ export class EFIController {
       }
 
       const resposta = await this.efiService.consultarNotificacaoPorToken(tokenNotificacao);
-      const eventos: any[] = Array.isArray(resposta?.data) ? resposta.data : [];
-      if (!eventos.length) {
-        res.status(502).json({ erro: 'Resposta da EFI sem eventos de notificação', detalhes: resposta });
+      const raw = resposta?.data;
+      let dados: any;
+      if (Array.isArray(raw)) {
+        // Eventos vêm ordenados pelo ciclo; usar o último como estado atual
+        const ultimoEvento = raw[raw.length - 1];
+        dados = ultimoEvento?.data ?? ultimoEvento;
+      } else if (raw && typeof raw === 'object') {
+        // Algumas integrações retornam data como objeto único
+        dados = (raw as any).data ?? raw;
+      } else {
+        res.status(404).json({ erro: 'Token de notificação sem eventos/dados na EFI', detalhes: resposta });
         return;
       }
+      const chargeIdAny: any = (
+        dados?.charge_id ?? dados?.chargeId ?? dados?.identifiers?.charge_id ?? dados?.identifiers?.chargeId
+      );
+      const chargeId: number | undefined =
+        typeof chargeIdAny === 'string' ? parseInt(chargeIdAny, 10) : (typeof chargeIdAny === 'number' ? chargeIdAny : undefined);
 
-      // Eventos vêm ordenados pelo ciclo; usar o último como estado atual
-      const ultimoEvento = eventos[eventos.length - 1];
-      const dados = ultimoEvento?.data || ultimoEvento;
-      const chargeId: number | undefined = dados?.charge_id ?? dados?.chargeId;
-      const statusEFI: string | undefined = dados?.status;
-      const totalEFI: number | undefined = dados?.total;
-      const paymentRaw: any = dados?.payment;
+      const statusField: any = dados?.status;
+      const statusEFI: string | undefined =
+        typeof statusField === 'string'
+          ? statusField
+          : (typeof statusField === 'object' ? (statusField.current ?? statusField.name ?? statusField.value) : undefined);
+
+      const totalEFI: number | undefined =
+        typeof dados?.total === 'number' ? dados.total : (typeof dados?.value === 'number' ? dados.value : undefined);
+
+      const paymentRaw: any = dados?.payment ?? dados?.payment_method ?? dados?.method;
 
       if (!chargeId || !statusEFI) {
-        res.status(502).json({ erro: 'Evento sem charge_id ou status', evento: ultimoEvento });
+        res.status(502).json({ erro: 'Evento sem charge_id ou status', evento: dados });
         return;
       }
 
