@@ -84,7 +84,13 @@ export class EFIService {
     try {
       const token = await this.getAccessToken();
       
-      console.log('Criando cobrança one-step EFI:', JSON.stringify(cobranca, null, 2));
+      // Injeta notification_url automaticamente se configurada no .env
+      const notificationUrl = process.env.EFI_NOTIFICATION_URL;
+      const payload = notificationUrl
+        ? { ...cobranca, metadata: { notification_url: notificationUrl } }
+        : cobranca;
+
+      console.log('Criando cobrança one-step EFI:', JSON.stringify(payload, null, 2));
       
       const config = {
         method: "POST" as const,
@@ -93,7 +99,7 @@ export class EFIService {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-        data: JSON.stringify(cobranca),
+        data: JSON.stringify(payload),
         timeout: 30000, // 30 segundos de timeout
       };
 
@@ -145,6 +151,40 @@ export class EFIService {
         config: error.config?.url
       });
       throw new Error('Falha ao consultar cobrança na EFI Pagamentos');
+    }
+  }
+
+  /**
+   * Consulta detalhes de notificação na EFI pelo token de notificação
+   * Retorna o histórico de eventos para uma cobrança; utilizar o último evento para estado atual
+   */
+  async consultarNotificacaoPorToken(tokenNotificacao: string): Promise<any> {
+    try {
+      const token = await this.getAccessToken();
+
+      console.log('Consultando notificação EFI por token:', tokenNotificacao);
+
+      const config = {
+        method: "GET" as const,
+        url: `${this.baseURL}/notification/${tokenNotificacao}`,
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        timeout: 30000,
+      };
+
+      const response: AxiosResponse<any> = await axios(config);
+      console.log('Notificação consultada com sucesso:', response.data);
+      return response.data; // esperado: { code, data: Array<eventos> }
+    } catch (error: any) {
+      console.error('Erro detalhado ao consultar notificação EFI por token:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        config: error.config?.url
+      });
+      throw new Error('Falha ao consultar notificação na EFI Pagamentos');
     }
   }
 }

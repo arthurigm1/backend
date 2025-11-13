@@ -47,6 +47,14 @@ router.post('/charge/one-step', efiController.criarCobrancaOneStep);
 router.get('/charge/:efiCobrancaId', efiController.consultarCobrancaEAtualizarPorId);
 
 /**
+ * @route POST /api/efi/notification
+ * @desc Recebe token de notificação da EFI e atualiza cobrança/fatura
+ * @access Public
+ * @body { notification: string }
+ */
+router.post('/notification', efiController.processarNotificacao);
+
+/**
  * @route POST /api/efi/cobranca
  * @desc Criar uma nova cobrança PIX imediata
  * @access Private
