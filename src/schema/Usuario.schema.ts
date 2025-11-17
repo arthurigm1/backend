@@ -1,5 +1,6 @@
 import { string, z } from "zod";
 import { criarEmpresaSchema } from "./Empresa.schema";
+import { TipoUsuario } from "../generated/prisma";
 
 const tipoUsuarioEnum = z.enum(['ADMIN_EMPRESA', 'FUNCIONARIO', 'INQUILINO']);
 
@@ -57,4 +58,24 @@ export const alterarSenhaSchema = z.object({
   novaSenha: string()
     .nonempty({ message: "Nova senha é obrigatória!" })
     .min(6, { message: "Nova senha deve ter no mínimo 6 caracteres" }),
+});
+
+// Schema para editar usuário (nome, email, tipo)
+export const editarUsuarioSchema = z.object({
+  nome: string().min(1, "Nome é obrigatório").optional(),
+  email: string().email({ message: "Email inválido" }).optional(),
+  tipo: z.nativeEnum(TipoUsuario).optional(),
+}).refine((data) => data.nome || data.email || data.tipo, {
+  message: "Pelo menos um campo deve ser fornecido",
+  path: ["nome"],
+});
+
+// Schema para o inquilino editar seu próprio perfil
+export const editarPerfilInquilinoSchema = z.object({
+  nome: string().min(1, "Nome é obrigatório").optional(),
+  email: string().email({ message: "Email inválido" }).optional(),
+  telefone: string().optional(),
+}).refine((data) => data.nome || data.email || data.telefone, {
+  message: "Pelo menos um campo deve ser fornecido",
+  path: ["nome"],
 });

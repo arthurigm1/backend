@@ -7,6 +7,7 @@ import { ApiError } from "../../utils/apiError";
 import { emailService } from "../Email/EmailService";
 import crypto from "crypto";
 import { TipoUsuario } from "../../generated/prisma";
+import { editarUsuarioSchema, editarPerfilInquilinoSchema } from "../../schema/Usuario.schema";
 
 const usuarioModel = new UsuarioModel();
 const empresaService = new EmpresaService();
@@ -349,4 +350,75 @@ async alterarSenhaComSenhaAtual(usuarioLogadoId: string, senhaAtual: string, nov
     await usuarioModel.atualizarSenha(usuario.id, novaSenha);
     return { sucesso: true, mensagem: "Senha alterada com sucesso" };
 }
+
+  async editarUsuario(usuarioId: string, usuarioLogadoId: string, dados: unknown) {
+    const usuarioLogado = await usuarioModel.buscarPorId(usuarioLogadoId);
+    if (!usuarioLogado) {
+      throw new ApiError(404, "Usuário logado não encontrado");
+    }
+    if (usuarioLogado.tipo !== "ADMIN_EMPRESA") {
+      throw new ApiError(403, "Apenas administradores da empresa podem editar usuários");
+    }
+
+    const usuarioAlvo = await usuarioModel.buscarPorId(usuarioId);
+    if (!usuarioAlvo) {
+      throw new ApiError(404, "Usuário alvo não encontrado");
+    }
+    if (usuarioAlvo.empresaId !== usuarioLogado.empresaId) {
+      throw new ApiError(403, "Você só pode editar usuários da sua empresa");
+    }
+
+    const valid = editarUsuarioSchema.safeParse(dados);
+    if (!valid.success) {
+      throw new ApiError(400, "Dados inválidos para edição");
+    }
+
+    // Garantir unicidade do email se for alterado
+    if (valid.data.email) {
+      const existente = await usuarioModel.buscarPorEmail(valid.data.email);
+      if (existente && existente.id !== usuarioId) {
+        throw new ApiError(400, "Email já está em uso por outro usuário");
+      }
+    }
+
+    const atualizado = await usuarioModel.atualizarUsuario(usuarioId, {
+      nome: valid.data.nome,
+      email: valid.data.email,
+      tipo: valid.data.tipo as TipoUsuario | undefined,
+    });
+
+    return { sucesso: true, mensagem: "Usuário atualizado com sucesso", usuario: atualizado };
+  }
+
+  async editarPerfilInquilino(usuarioLogadoId: string, dados: unknown) {
+    const usuarioLogado = await usuarioModel.buscarPorId(usuarioLogadoId);
+    if (!usuarioLogado) {
+      throw new ApiError(404, "Usuário logado não encontrado");
+    }
+
+    if (usuarioLogado.tipo !== "INQUILINO") {
+      throw new ApiError(403, "Apenas inquilinos podem editar este perfil");
+    }
+
+    const valid = editarPerfilInquilinoSchema.safeParse(dados);
+    if (!valid.success) {
+      throw new ApiError(400, "Dados inválidos para edição de perfil");
+    }
+
+    // Garantir unicidade do email se for alterado
+    if (valid.data.email) {
+      const existente = await usuarioModel.buscarPorEmail(valid.data.email);
+      if (existente && existente.id !== usuarioLogadoId) {
+        throw new ApiError(400, "Email já está em uso por outro usuário");
+      }
+    }
+
+    const atualizado = await usuarioModel.atualizarUsuario(usuarioLogadoId, {
+      nome: valid.data.nome,
+      email: valid.data.email,
+      telefone: valid.data.telefone,
+    });
+
+    return { sucesso: true, mensagem: "Perfil atualizado com sucesso", usuario: atualizado };
+  }
 }

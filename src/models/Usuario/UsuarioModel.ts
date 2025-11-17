@@ -272,6 +272,22 @@ async login(email: string) {
     });
   }
 
+  async atualizarUsuario(usuarioId: string, data: { nome?: string; email?: string; telefone?: string; tipo?: TipoUsuario }) {
+    return await prismaClient.usuario.update({
+      where: { id: usuarioId },
+      data,
+      select: {
+        id: true,
+        nome: true,
+        email: true,
+        telefone: true,
+        tipo: true,
+        ativo: true,
+        empresaId: true,
+      },
+    });
+  }
+
   async listarInquilinosDaEmpresa(empresaId: string) {
     return await prismaClient.usuario.findMany({
       where: {

@@ -7,6 +7,7 @@ import {
   solicitarRedefinicaoSenhaSchema,
   redefinirSenhaSchema,
   alterarSenhaSchema,
+  editarUsuarioSchema,
 } from "../../schema/Usuario.schema";
 import { UsuarioService } from "../../service/Usuario/UsuarioService";
 import { MENSAGEM_SUCESSO_USER_CRIADO } from "../../constants/sucesso";
@@ -373,6 +374,52 @@ export class UsuarioController {
         mensagem: "Usuário ativado com sucesso",
         usuario,
       });
+    } catch (error: any) {
+      return res.status(error.statusCode || 500).json({
+        error: error.message || "Erro interno do servidor",
+      });
+    }
+  }
+
+  async editarUsuario(req: Request, res: Response): Promise<Response> {
+    try {
+      const usuarioLogadoId = req.user?.id;
+      const { id } = req.params;
+
+      if (!usuarioLogadoId) {
+        return res.status(401).json({ error: "Usuário não autenticado" });
+      }
+
+      if (!id) {
+        return res.status(400).json({ error: "ID do usuário é obrigatório" });
+      }
+
+      const dadosValidados = editarUsuarioSchema.safeParse(req.body);
+      if (!dadosValidados.success) {
+        return res.status(400).json({
+          error: "Dados inválidos",
+          details: dadosValidados.error.errors,
+        });
+      }
+
+      const resultado = await usuarioService.editarUsuario(id, usuarioLogadoId, dadosValidados.data);
+      return res.status(200).json(resultado);
+    } catch (error: any) {
+      return res.status(error.statusCode || 500).json({
+        error: error.message || "Erro interno do servidor",
+      });
+    }
+  }
+
+  async editarPerfilInquilino(req: Request, res: Response): Promise<Response> {
+    try {
+      const usuarioLogadoId = req.user?.id;
+      if (!usuarioLogadoId) {
+        return res.status(401).json({ error: "Usuário não autenticado" });
+      }
+
+      const resultado = await usuarioService.editarPerfilInquilino(usuarioLogadoId, req.body);
+      return res.status(200).json(resultado);
     } catch (error: any) {
       return res.status(error.statusCode || 500).json({
         error: error.message || "Erro interno do servidor",

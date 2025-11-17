@@ -28,5 +28,11 @@ router.patch("/desativar/:id", authenticateJWT, requireActiveUser, usuarioContro
 // Ativar usuário (apenas usuários autenticados; controle de permissão no service)
 router.patch("/ativar/:id", authenticateJWT, requireActiveUser, usuarioController.ativarUsuario);
 
+// Editar usuário (tipo, nome, email) - apenas admin da empresa
+router.patch("/editar/:id", authenticateJWT, requireActiveUser, usuarioController.editarUsuario);
+
+// Editar perfil do inquilino autenticado (nome, email, telefone)
+router.patch("/inquilino/editar", authenticateJWT, requireActiveUser, usuarioController.editarPerfilInquilino);
+
 
 export default router;

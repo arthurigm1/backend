@@ -119,11 +119,16 @@ export class AnalyticsService {
     const valorVencidas = somaValor(porStatus.vencidas);
 
     // Controle de caixa no período
+    // Normalizar comparações de período para início/fim do dia, evitando problemas de timezone
+    const inicioNormalizado = inicio ? new Date(inicio) : undefined;
+    const fimNormalizado = fim ? new Date(fim) : undefined;
+    if (inicioNormalizado) inicioNormalizado.setHours(0, 0, 0, 0);
+    if (fimNormalizado) fimNormalizado.setHours(23, 59, 59, 999);
+
     const dentroPeriodo = (d?: Date) => {
       if (!d) return false;
-      if (inicio && d < inicio) return false;
-      if (fim && d > fim) return false;
-      return true;
+      const data = new Date(d);
+      return (!inicioNormalizado || data >= inicioNormalizado) && (!fimNormalizado || data <= fimNormalizado);
     };
 
     const entradasPeriodo = porStatus.pagas
