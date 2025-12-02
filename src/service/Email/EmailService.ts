@@ -15,7 +15,7 @@ export class EmailService {
       secure: false, // true para 465, false para outras portas
       auth: {
         user: "arthurmartinsig1@gmail.com",
-        pass: "gwmv pzox kufv mbqd"
+        pass: "qttu pcba gded npoc"
       },
       tls: {
         rejectUnauthorized: false
