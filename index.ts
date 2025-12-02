@@ -1,8 +1,6 @@
-import dotenv from "dotenv";
+import 'dotenv/config';
 import app from "./src/app";
 import { SchedulerService } from "./src/service/Scheduler/SchedulerService";
-
-dotenv.config();
 
 const port: number = parseInt(process.env.PORT || "3010");
 const schedulerService = new SchedulerService();
