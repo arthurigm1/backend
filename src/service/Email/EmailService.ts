@@ -1,6 +1,7 @@
 import nodemailer from 'nodemailer';
 import { ApiError } from '../../utils/apiError';
-
+import dotenv from "dotenv";
+dotenv.config();
 export class EmailService {
   private transporter!: nodemailer.Transporter;
 
@@ -16,9 +17,6 @@ export class EmailService {
       auth: {
         user: "arthurmartinsig1@gmail.com",
         pass: "qttu pcba gded npoc"
-      },
-      tls: {
-        rejectUnauthorized: false
       }
     });
   }
